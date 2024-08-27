@@ -17,6 +17,8 @@ public class EnemyDamage : MonoBehaviour
         }
     }
 
+   
+
     private void PushBackPlayer(Transform player)
     {
         Vector2 pushDirection = (player.position - transform.position).normalized;
