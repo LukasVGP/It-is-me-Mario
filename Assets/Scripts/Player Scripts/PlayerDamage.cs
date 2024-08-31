@@ -8,7 +8,7 @@ public class PlayerDamage : MonoBehaviour
 {
 
     private Text lifeText;
-    private int lifeScoreCount;
+    public int lifeScoreCount;
 
     private bool canDamage;
 

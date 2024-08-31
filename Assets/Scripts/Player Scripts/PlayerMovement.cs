@@ -24,12 +24,12 @@ public class PlayerMovement : MonoBehaviour
 
     void Update()
     {
-        CheckIfGrounded();
         PlayerJump();
     }
 
     void FixedUpdate()
     {
+        CheckIfGrounded();
         PlayerWalk();
     }
 
@@ -78,15 +78,12 @@ public class PlayerMovement : MonoBehaviour
 
     void PlayerJump()
     {
-        if (isGrounded && !jumped && Time.time >= lastJumpTime + jumpCooldown)
+        if (isGrounded && Input.GetButtonDown("Jump") && Time.time > lastJumpTime + jumpCooldown)
         {
-            if (Input.GetKey(KeyCode.Space))
-            {
-                jumped = true;
-                myBody.velocity = new Vector2(myBody.velocity.x, jumpPower);
-                anim.SetBool("Jump", true);
-                lastJumpTime = Time.time;
-            }
+            jumped = true;
+            lastJumpTime = Time.time;
+            myBody.velocity = new Vector2(myBody.velocity.x, jumpPower);
+            anim.SetBool("Jump", true);
         }
     }
 }
