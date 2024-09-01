@@ -7,12 +7,21 @@ public class BossScript : MonoBehaviour {
 	public GameObject stone;
 	public Transform attackInstantiate;
 
+	public float chaseSpeed;
+	public float attackRange;
+	public int meleeDamage;
+
+	private Transform player;
+	private bool isChasing;
+
 	private Animator anim;
 
 	private string coroutine_Name = "StartAttack";
 
 	void Awake() {
 		anim = GetComponent<Animator> ();
+		player = GameObject.FindGameObjectWithTag ("Player").transform;
+		isChasing=false;
 	}
 
 	void Start () {
@@ -33,11 +42,68 @@ public class BossScript : MonoBehaviour {
 		enabled = false;
 	}
 
-	IEnumerator StartAttack() {
-		yield return new WaitForSeconds (Random.Range (2f, 5f));
+    IEnumerator StartAttack()
+    {
+        while (true)
+        {
+            yield return new WaitForSeconds(Random.Range(2f, 5f));
 
-		anim.Play ("BossAttack");
-		StartCoroutine (coroutine_Name);
+            if (Vector2.Distance(transform.position, player.position) <= attackRange)
+            {
+                anim.Play("BossAttack");
+                Attack();
+            }
+            else
+            {
+                isChasing = true;
+                anim.Play("BossChase");
+            }
+        }
+    }
+
+	void Update ()
+	{
+		if (isChasing)
+		{
+            ChasePlayer ();
+        }
+		LookAtPlayer();
+	}
+
+    void LookAtPlayer()
+    {
+        Vector3 direction = player.position - transform.position;
+        Vector3 scale = transform.localScale;
+
+        if (direction.x >= 0.1f)
+        {
+            scale.x = Mathf.Abs(scale.x); // Ensure the boss faces right
+        }
+        else if (direction.x <= -0.1f)
+        {
+            scale.x = -Mathf.Abs(scale.x); // Ensure the boss faces left
+        }
+
+        transform.localScale = scale;
+    }
+
+
+    void ChasePlayer()
+	{
+        transform.position = Vector2.MoveTowards(transform.position, player.position, chaseSpeed * Time.deltaTime);
+
+		if (Vector2.Distance(transform.position, player.position) <= attackRange)
+		{
+			isChasing = false;
+			anim.Play("BossAttack");
+			MeleeAttack();
+		}
+    }
+
+	void MeleeAttack()
+	{
+		anim.ResetTrigger("MeleeAttack");
+		player.GetComponent<PlayerDamage>().TakeDamage(meleeDamage);
 	}
 
 } // class
