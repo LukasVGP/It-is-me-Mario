@@ -1,20 +1,16 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 
 public class PlayerMovement : MonoBehaviour
 {
     public float speed = 5f;
-    public Transform groundCheckPosition; // Ensure this is assigned in the inspector
+    public float jumpPower = 12f;
+    public float groundCheckDistance = 0.1f;
     public LayerMask groundLayer;
 
     private Rigidbody2D myBody;
     private Animator anim;
     private bool isGrounded;
-    private bool jumped;
-    private float jumpPower = 12f;
-    private float jumpCooldown = 0.9f; // Cooldown period for jump
-    private float lastJumpTime; // Time when the player last jumped
+    private bool isJumping;
 
     void Awake()
     {
@@ -24,12 +20,12 @@ public class PlayerMovement : MonoBehaviour
 
     void Update()
     {
-        PlayerJump();
+        CheckGrounded();
+        HandleJump();
     }
 
     void FixedUpdate()
     {
-        CheckIfGrounded();
         PlayerWalk();
     }
 
@@ -62,28 +58,31 @@ public class PlayerMovement : MonoBehaviour
         transform.localScale = tempScale;
     }
 
-    void CheckIfGrounded()
+    void CheckGrounded()
     {
-        isGrounded = Physics2D.OverlapCircle(groundCheckPosition.position, 0.1f, groundLayer);
+        RaycastHit2D hit = Physics2D.Raycast(transform.position, Vector2.down, groundCheckDistance, groundLayer);
+        isGrounded = hit.collider != null;
 
-        if (isGrounded)
+        if (isGrounded && myBody.velocity.y <= 0)
         {
-            if (jumped)
-            {
-                jumped = false;
-                anim.SetBool("Jump", false);
-            }
+            isJumping = false;
+            anim.SetBool("Jump", false);
         }
     }
 
-    void PlayerJump()
+    void HandleJump()
     {
-        if (isGrounded && Input.GetButtonDown("Jump") && Time.time > lastJumpTime + jumpCooldown)
+        if (Input.GetButtonDown("Jump") && isGrounded && !isJumping)
         {
-            jumped = true;
-            lastJumpTime = Time.time;
             myBody.velocity = new Vector2(myBody.velocity.x, jumpPower);
+            isJumping = true;
             anim.SetBool("Jump", true);
         }
+    }
+
+    void OnDrawGizmos()
+    {
+        Gizmos.color = Color.red;
+        Gizmos.DrawLine(transform.position, transform.position + Vector3.down * groundCheckDistance);
     }
 }

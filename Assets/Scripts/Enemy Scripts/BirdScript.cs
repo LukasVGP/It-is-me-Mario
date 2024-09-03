@@ -2,138 +2,114 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class BirdScript : MonoBehaviour {
+public class BirdScript : MonoBehaviour
+{
 
-	private Rigidbody2D myBody;
-	private Animator anim;
+    private Rigidbody2D myBody;
+    private Animator anim;
 
-	private Vector3 moveDirection = Vector3.left;
-	private Vector3 originPosition;
-	private Vector3 movePosition;
+    private Vector3 moveDirection = Vector3.left;
+    private Vector3 originPosition;
+    private Vector3 movePosition;
 
-	public GameObject birdEgg;
-	public LayerMask playerLayer;
-	private bool attacked;
+    public GameObject birdEgg;
+    public LayerMask playerLayer;
+    private bool attacked;
 
-	private bool canMove;
+    private bool canMove;
 
-	private float speed = 2.5f;
+    private float speed = 2.5f;
 
-	void Awake() {
-		myBody = GetComponent<Rigidbody2D> ();
-		anim = GetComponent<Animator> ();
-	}
+    void Awake()
+    {
+        myBody = GetComponent<Rigidbody2D>();
+        anim = GetComponent<Animator>();
+    }
 
-	void Start () {
-		originPosition = transform.position;
-		originPosition.x += 6f;
+    void Start()
+    {
+        originPosition = transform.position;
+        originPosition.x += 6f;
 
-		movePosition = transform.position;
-		movePosition.x -= 6f;
+        movePosition = transform.position;
+        movePosition.x -= 6f;
 
-		canMove = true;
+        canMove = true;
 
-	}
-	
-	// Update is called once per frame
-	void Update () {
-		MoveTheBird ();
-		DropTheEgg ();
-	}
+    }
 
-	void MoveTheBird() {
-		if (canMove) {
-			transform.Translate (moveDirection * speed * Time.smoothDeltaTime);
+    // Update is called once per frame
+    void Update()
+    {
+        MoveTheBird();
+        DropTheEgg();
+    }
 
-			if (transform.position.x >= originPosition.x) {
-				moveDirection = Vector3.left;
+    void MoveTheBird()
+    {
+        if (canMove)
+        {
+            transform.Translate(moveDirection * speed * Time.smoothDeltaTime);
 
-				ChangeDirection (0.5f);
+            if (transform.position.x >= originPosition.x)
+            {
+                moveDirection = Vector3.left;
 
-			} else if (transform.position.x <= movePosition.x) {
-				moveDirection = Vector3.right; 
+                ChangeDirection(0.5f);
 
-				ChangeDirection (-0.5f);
+            }
+            else if (transform.position.x <= movePosition.x)
+            {
+                moveDirection = Vector3.right;
 
-			}
+                ChangeDirection(-0.5f);
 
-		}
-	}
+            }
 
-	void ChangeDirection(float direction) {
-		Vector3 tempScale = transform.localScale;
-		tempScale.x = direction;
-		transform.localScale = tempScale;
-	}
+        }
+    }
 
-	void DropTheEgg() {
-		if (!attacked) {
-			if (Physics2D.Raycast (transform.position, Vector2.down, Mathf.Infinity, playerLayer)) {
-				Instantiate (birdEgg, new Vector3 (transform.position.x,
-					transform.position.y - 1f, transform.position.z), Quaternion.identity);
-				attacked = true;
-				anim.Play ("BirdFly");
-			}
-		}
-	}
+    void ChangeDirection(float direction)
+    {
+        Vector3 tempScale = transform.localScale;
+        tempScale.x = direction;
+        transform.localScale = tempScale;
+    }
 
-	IEnumerator BirdDead() {
-		yield return new WaitForSeconds (3f);
-		gameObject.SetActive (false);
-	}
+    void DropTheEgg()
+    {
+        if (!attacked)
+        {
+            if (Physics2D.Raycast(transform.position, Vector2.down, Mathf.Infinity, playerLayer))
+            {
+                Instantiate(birdEgg, new Vector3(transform.position.x,
+                    transform.position.y - 1f, transform.position.z), Quaternion.identity);
+                attacked = true;
+                anim.Play("BirdFly");
+            }
+        }
+    }
 
-	void OnTriggerEnter2D(Collider2D target) {
-		if (target.tag == MyTags.BULLET_TAG) {
-			anim.Play ("BirdDead");
+    IEnumerator BirdDead()
+    {
+        yield return new WaitForSeconds(3f);
+        gameObject.SetActive(false);
+    }
 
-			GetComponent<BoxCollider2D> ().isTrigger = true;
-			myBody.bodyType = RigidbodyType2D.Dynamic;
+    void OnTriggerEnter2D(Collider2D target)
+    {
+        if (target.tag == MyTags.BULLET_TAG)
+        {
+            anim.Play("BirdDead");
 
-			canMove = false;
+            GetComponent<BoxCollider2D>().isTrigger = true;
+            myBody.bodyType = RigidbodyType2D.Dynamic;
 
-			StartCoroutine (BirdDead ());
+            canMove = false;
 
-		}
-	}
+            StartCoroutine(BirdDead());
+
+        }
+    }
 
 } // class
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

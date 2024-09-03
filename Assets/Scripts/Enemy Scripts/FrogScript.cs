@@ -2,131 +2,127 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class FrogScript : MonoBehaviour {
+public class FrogScript : MonoBehaviour
+{
 
-	private Animator anim;
+    private Animator anim;
 
-	private bool animation_Started;
-	private bool animation_Finished;
+    private bool animation_Started;
+    private bool animation_Finished;
 
-	private int jumpedTimes;
-	private bool jumpLeft = true;
+    private int jumpedTimes;
+    private bool jumpLeft = true;
 
-	private string coroutine_Name = "FrogJump";
+    private string coroutine_Name = "FrogJump";
 
-	public LayerMask playerLayer;
+    public LayerMask playerLayer;
 
-	private GameObject player;
+    private GameObject player;
 
-	void Awake() {
-		anim = GetComponent<Animator> ();
-	}
+    private bool stunned;
 
-	void Start () {
-		StartCoroutine (coroutine_Name);
-		player = GameObject.FindGameObjectWithTag (MyTags.PLAYER_TAG);
-	}
+    void Awake()
+    {
+        anim = GetComponent<Animator>();
+    }
 
-	void Update() {
-		if(Physics2D.OverlapCircle(transform.position, 0.5f, playerLayer)) {
-			player.GetComponent<PlayerDamage> ().DealDamage ();
-		}
-	}
+    void Start()
+    {
+        StartCoroutine(coroutine_Name);
+        player = GameObject.FindGameObjectWithTag(MyTags.PLAYER_TAG);
+    }
 
-	void LateUpdate () {
-		if (animation_Finished && animation_Started) {
-			animation_Started = false;
+    void Update()
+    {
+        if (Physics2D.OverlapCircle(transform.position, 0.5f, playerLayer))
+        {
+            if (!stunned)
+            {
+                player.GetComponent<PlayerDamage>().DealDamage();
+            }
+        }
+    }
 
-			transform.parent.position = transform.position;
-			transform.localPosition = Vector3.zero;
-		}
-	}
+    void LateUpdate()
+    {
+        if (animation_Finished && animation_Started)
+        {
+            animation_Started = false;
 
-	IEnumerator FrogJump() {
-		yield return new WaitForSeconds (Random.Range(1f, 4f));
+            transform.parent.position = transform.position;
+            transform.localPosition = Vector3.zero;
+        }
+    }
 
-		animation_Started = true;
-		animation_Finished = false;
+    IEnumerator FrogJump()
+    {
+        yield return new WaitForSeconds(Random.Range(1f, 4f));
 
-		jumpedTimes++;
+        animation_Started = true;
+        animation_Finished = false;
 
-		if (jumpLeft) {
-			anim.Play ("FrogJumpLeft");
-		} else {
-			anim.Play ("FrogJumpRight");
-		}
+        jumpedTimes++;
 
-		StartCoroutine (coroutine_Name);
+        if (jumpLeft)
+        {
+            anim.Play("FrogJumpLeft");
+        }
+        else
+        {
+            anim.Play("FrogJumpRight");
+        }
 
-	}
+        StartCoroutine(coroutine_Name);
 
-	void AnimationFinished() {
+    }
 
-		animation_Finished = true;
+    void AnimationFinished()
+    {
 
-		if (jumpLeft) {
-			anim.Play ("FrogIdleLeft");
-		} else {
-			anim.Play ("FrogIdleRight");
-		}
+        animation_Finished = true;
 
-		if (jumpedTimes == 3) {
-			jumpedTimes = 0;
+        if (jumpLeft)
+        {
+            anim.Play("FrogIdleLeft");
+        }
+        else
+        {
+            anim.Play("FrogIdleRight");
+        }
 
-			Vector3 tempScale = transform.localScale;
-			tempScale.x *= -1;
-			transform.localScale = tempScale;
+        if (jumpedTimes == 3)
+        {
+            jumpedTimes = 0;
 
-			jumpLeft = !jumpLeft;
-		}
-	}
+            Vector3 tempScale = transform.localScale;
+            tempScale.x *= -1;
+            transform.localScale = tempScale;
+
+            jumpLeft = !jumpLeft;
+        }
+    }
+
+    void OnTriggerEnter2D(Collider2D target)
+    {
+        if (target.tag == MyTags.BULLET_TAG)
+        {
+            if (!stunned)
+            {
+                anim.Play("Stunned");
+                stunned = true;
+                StartCoroutine(Dead(0.4f));
+            }
+            else
+            {
+                gameObject.SetActive(false);
+            }
+        }
+    }
+
+    IEnumerator Dead(float timer)
+    {
+        yield return new WaitForSeconds(timer);
+        gameObject.SetActive(false);
+    }
 
 } // class
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

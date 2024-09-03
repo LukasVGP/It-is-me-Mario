@@ -7,17 +7,13 @@ public class LevelTransition : MonoBehaviour
 {
     public string nextLevel; // Name of the next level scene
 
-    void Update()
+    void OnTriggerEnter2D(Collider2D other)
     {
-        if (Input.GetKeyDown(KeyCode.E))
+        // Check if the player enters the trigger area
+        if (other.CompareTag("Player"))
         {
-            // Check if the player is near the object
-            Collider2D playerCollider = Physics2D.OverlapCircle(transform.position, 1f, LayerMask.GetMask("Player"));
-            if (playerCollider != null)
-            {
-                // Load the next level
-                SceneManager.LoadScene(nextLevel);
-            }
+            // Load the next level
+            SceneManager.LoadScene(nextLevel);
         }
     }
 }
