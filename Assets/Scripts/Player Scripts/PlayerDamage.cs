@@ -6,18 +6,16 @@ using UnityEngine.SceneManagement;
 
 public class PlayerDamage : MonoBehaviour
 {
-
     private Text lifeText;
     public int lifeScoreCount;
-
     private bool canDamage;
+    public Transform respawnPoint; // Add this line to define the respawn point
 
     void Awake()
     {
         lifeText = GameObject.Find("LifeText").GetComponent<Text>();
         lifeScoreCount = 3;
         lifeText.text = "x" + lifeScoreCount;
-
         canDamage = true;
     }
 
@@ -46,7 +44,6 @@ public class PlayerDamage : MonoBehaviour
             }
 
             canDamage = false;
-
             StartCoroutine(WaitForDamage());
         }
     }
@@ -71,9 +68,13 @@ public class PlayerDamage : MonoBehaviour
             }
 
             canDamage = false;
-
             StartCoroutine(WaitForDamage());
         }
+    }
+
+    public void Respawn() // Add this method to handle respawning
+    {
+        transform.position = respawnPoint.position;
     }
 
     IEnumerator WaitForDamage()
@@ -88,5 +89,4 @@ public class PlayerDamage : MonoBehaviour
         yield return new WaitForSecondsRealtime(2f);
         SceneManager.LoadScene("Gameplay");
     }
-
-} // class
+}
