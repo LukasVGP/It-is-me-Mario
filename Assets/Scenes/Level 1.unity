@@ -2398,7 +2398,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 1997495232899738, guid: deb81019505174616922fb5b092e2611, type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 4250916752214804, guid: deb81019505174616922fb5b092e2611, type: 3}
       propertyPath: m_RootOrder
@@ -2410,7 +2410,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4250916752214804, guid: deb81019505174616922fb5b092e2611, type: 3}
       propertyPath: m_LocalPosition.y
-      value: -3.66
+      value: -3.79
       objectReference: {fileID: 0}
     - target: {fileID: 4250916752214804, guid: deb81019505174616922fb5b092e2611, type: 3}
       propertyPath: m_LocalPosition.z
@@ -2431,6 +2431,14 @@ PrefabInstance:
     - target: {fileID: 4250916752214804, guid: deb81019505174616922fb5b092e2611, type: 3}
       propertyPath: m_LocalRotation.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 61530700178921570, guid: deb81019505174616922fb5b092e2611, type: 3}
+      propertyPath: m_Size.x
+      value: 2.8
+      objectReference: {fileID: 0}
+    - target: {fileID: 61530700178921570, guid: deb81019505174616922fb5b092e2611, type: 3}
+      propertyPath: m_Size.y
+      value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 114754893130265698, guid: deb81019505174616922fb5b092e2611, type: 3}
       propertyPath: playerLayer.m_Bits
@@ -14679,6 +14687,8 @@ MonoBehaviour:
   winSound: {fileID: 8300000, guid: 5f141540de63cc74887c900d5edc33f2, type: 3}
   gameOverSound: {fileID: 8300000, guid: b96680bd60be54d85b43378c3570902a, type: 3}
   mainMenuSceneName: MainMenu
+  gameOverSceneName: GameOverScene
+  delayBeforeGameOverScene: 2
 --- !u!1 &841727226
 GameObject:
   m_ObjectHideFlags: 0
@@ -36348,7 +36358,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4038629572465822, guid: faaef2337c68447b79977529f4878950, type: 3}
       propertyPath: m_LocalPosition.y
-      value: -3.34
+      value: -3.519
       objectReference: {fileID: 0}
     - target: {fileID: 4038629572465822, guid: faaef2337c68447b79977529f4878950, type: 3}
       propertyPath: m_LocalPosition.z
@@ -36380,7 +36390,7 @@ PrefabInstance:
       objectReference: {fileID: 6200000, guid: 6c3e9d0334c754a25a558e0af0b452b2, type: 2}
     - target: {fileID: 61509429410213164, guid: faaef2337c68447b79977529f4878950, type: 3}
       propertyPath: m_Size.x
-      value: 0.49126142
+      value: 0.7
       objectReference: {fileID: 0}
     - target: {fileID: 61509429410213164, guid: faaef2337c68447b79977529f4878950, type: 3}
       propertyPath: m_Size.y
@@ -36410,6 +36420,10 @@ PrefabInstance:
       propertyPath: respawnPoint
       value: 
       objectReference: {fileID: 294464628}
+    - target: {fileID: 114855583041589088, guid: faaef2337c68447b79977529f4878950, type: 3}
+      propertyPath: deathJumpForce
+      value: 25
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
