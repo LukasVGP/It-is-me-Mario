@@ -6,6 +6,8 @@ public class Boss : MonoBehaviour
     public int health = 100;
     public Transform player;
     public bool isFlipped = false;
+    private bool canDamage;
+
 
     public GameObject stone;
     public Transform attackInstantiate;
@@ -18,11 +20,17 @@ public class Boss : MonoBehaviour
     private bool isChasing;
     private string coroutine_Name = "StartAttack";
 
+    public GameObject deathEffect;
+    public bool isInvulnerable = false;
+
     void Awake()
     {
         anim = GetComponent<Animator>();
         player = GameObject.FindGameObjectWithTag("Player").transform;
         isChasing = false;
+        anim = GetComponent<Animator>();
+        canDamage = true;
+       
     }
 
     void Start()
@@ -41,9 +49,19 @@ public class Boss : MonoBehaviour
 
     public void TakeDamage(int damage)
     {
+        if (isInvulnerable) return;
+
         health -= damage;
+
+        if (health <= 50)
+        {
+            GetComponent<Animator>().SetBool("IsEnraged", true);
+        }
+
         if (health <= 0)
         {
+            Die();
+       
             DefeatBoss();
         }
     }
@@ -56,6 +74,15 @@ public class Boss : MonoBehaviour
 
     private void Die()
     {
+        if (deathEffect != null)
+        {
+            Instantiate(deathEffect, transform.position, Quaternion.identity);
+        }
+        
+        else
+        {
+            Debug.LogError("Boss component is null!");
+        }
         DeactivateBossScript();
         anim.Play("BossDead");
         gameObject.SetActive(false);
@@ -70,13 +97,13 @@ public class Boss : MonoBehaviour
         {
             transform.localScale = flipped;
             transform.Rotate(0f, 180f, 0f);
-            isFlipped = true;
+            isFlipped = false;
         }
         else if (transform.position.x < player.position.x && isFlipped)
         {
             transform.localScale = flipped;
             transform.Rotate(0f, 180f, 0f);
-            isFlipped = false;
+            isFlipped = true;
         }
     }
 
@@ -88,21 +115,11 @@ public class Boss : MonoBehaviour
         {
             isChasing = false;
             anim.Play("BossAttack");
-            MeleeAttack();
+           
         }
     }
 
-    void Attack()
-    {
-        GameObject obj = Instantiate(stone, attackInstantiate.position, Quaternion.identity);
-        obj.GetComponent<Rigidbody2D>().AddForce(new Vector2(Random.Range(-300f, -700), 0f));
-    }
-
-    void MeleeAttack()
-    {
-        anim.ResetTrigger("MeleeAttack");
-        player.GetComponent<PlayerDamage>().TakeDamage(meleeDamage);
-    }
+  
 
     void BackToIdle()
     {
@@ -124,7 +141,7 @@ public class Boss : MonoBehaviour
             if (Vector2.Distance(transform.position, player.position) <= attackRange)
             {
                 anim.Play("BossAttack");
-                Attack();
+             
             }
             else
             {
@@ -133,4 +150,30 @@ public class Boss : MonoBehaviour
             }
         }
     }
+
+    IEnumerator WaitForDamage()
+    {
+        yield return new WaitForSeconds(2f);
+        canDamage = true;
+    }
+
+    void OnTriggerEnter2D(Collider2D target)
+    {
+        if (canDamage)
+        {
+            if (target.tag == MyTags.BULLET_TAG)
+            {
+                TakeDamage(1);
+                canDamage = false;
+
+                if (health == 0)
+                {
+                    Die();
+                }
+
+                StartCoroutine(WaitForDamage());
+            }
+        }
+    }
 }
+
