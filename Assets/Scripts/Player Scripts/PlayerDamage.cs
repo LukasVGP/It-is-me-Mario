@@ -29,7 +29,6 @@ public class PlayerDamage : MonoBehaviour
             lifeScoreCount--;
             UpdateLifeText();
             CheckGameOver();
-
             canDamage = false;
             StartCoroutine(WaitForDamage());
         }
@@ -42,7 +41,6 @@ public class PlayerDamage : MonoBehaviour
             lifeScoreCount -= damage / 100;
             UpdateLifeText();
             CheckGameOver();
-
             canDamage = false;
             StartCoroutine(WaitForDamage());
         }

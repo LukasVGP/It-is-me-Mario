@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
+using System.Collections;
 
 public class GameManager : MonoBehaviour
 {
@@ -8,13 +9,13 @@ public class GameManager : MonoBehaviour
 
     public bool isBossDefeated = false;
     public bool isGameOver = false;
-
     public GameObject winScreen;
     public GameObject gameOverScreen;
     public AudioClip winSound;
     public AudioClip gameOverSound;
-
     public string mainMenuSceneName = "MainMenu";
+    public string gameOverSceneName = "GameOverScene";
+    public float delayBeforeGameOverScene = 2f;
 
     private AudioSource audioSource;
 
@@ -35,18 +36,6 @@ public class GameManager : MonoBehaviour
         {
             audioSource = gameObject.AddComponent<AudioSource>();
         }
-
-        // Hide screens at start
-        if (winScreen != null) winScreen.SetActive(false);
-        if (gameOverScreen != null) gameOverScreen.SetActive(false);
-    }
-
-    void Update()
-    {
-        if (isBossDefeated && !isGameOver)
-        {
-            WinGame();
-        }
     }
 
     public void GameOver()
@@ -54,12 +43,18 @@ public class GameManager : MonoBehaviour
         if (!isGameOver)
         {
             isGameOver = true;
-            if (gameOverScreen != null) gameOverScreen.SetActive(true);
             PlaySound(gameOverSound);
-            Time.timeScale = 0f;
+            StartCoroutine(GameOverSequence());
         }
     }
 
+    private IEnumerator GameOverSequence()
+    {
+        Time.timeScale = 0f;
+        yield return new WaitForSecondsRealtime(delayBeforeGameOverScene);
+        Time.timeScale = 1f;
+        SceneManager.LoadScene(gameOverSceneName);
+    }
 
     public void WinGame()
     {
@@ -86,7 +81,7 @@ public class GameManager : MonoBehaviour
         Time.timeScale = 1f;
         isGameOver = false;
         isBossDefeated = false;
-        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex - 1);
     }
 
     public void ReturnToMainMenu()

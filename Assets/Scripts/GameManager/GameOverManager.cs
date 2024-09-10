@@ -1,16 +1,30 @@
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using System.Collections;
 
 public class GameOverManager : MonoBehaviour
 {
-    public Button restartButton;
-    public Button mainMenuButton;
-    public Button quitButton;
+    public float displayDuration = 5f;
+    public string mainMenuSceneName = "MainMenu";
+    public Button returnToMenuButton;
 
     void Start()
     {
-        restartButton.onClick.AddListener(GameManager.Instance.RestartGame);
-        mainMenuButton.onClick.AddListener(GameManager.Instance.ReturnToMainMenu);
-        quitButton.onClick.AddListener(GameManager.Instance.QuitGame);
+        Debug.Log("GameOverManager: Start method called");
+        if (returnToMenuButton != null)
+        {
+            returnToMenuButton.onClick.AddListener(ReturnToMainMenu);
+        }
+        else
+        {
+            Debug.LogError("Return to Menu button not assigned!");
+        }
+    }
+
+    void ReturnToMainMenu()
+    {
+        Debug.Log("GameOverManager: Attempting to load main menu scene: " + mainMenuSceneName);
+        SceneManager.LoadScene(mainMenuSceneName);
     }
 }
