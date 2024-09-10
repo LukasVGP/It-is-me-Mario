@@ -13,7 +13,7 @@ public class PlayerDamage : MonoBehaviour
     {
         lifeText = GameObject.Find("LifeText").GetComponent<Text>();
         lifeScoreCount = 3;
-        lifeText.text = "x" + lifeScoreCount;
+        UpdateLifeText();
         canDamage = true;
     }
 
@@ -27,23 +27,8 @@ public class PlayerDamage : MonoBehaviour
         if (canDamage)
         {
             lifeScoreCount--;
-
-            if (lifeScoreCount >= 0)
-            {
-                lifeText.text = "x" + lifeScoreCount;
-            }
-
-            if (lifeScoreCount == 0)
-            {
-                if (GameManager.Instance != null)
-                {
-                    GameManager.Instance.GameOver();
-                }
-                else
-                {
-                    Debug.LogError("GameManager instance not found!");
-                }
-            }
+            UpdateLifeText();
+            CheckGameOver();
 
             canDamage = false;
             StartCoroutine(WaitForDamage());
@@ -55,26 +40,31 @@ public class PlayerDamage : MonoBehaviour
         if (canDamage)
         {
             lifeScoreCount -= damage / 100;
-
-            if (lifeScoreCount >= 0)
-            {
-                lifeText.text = "x" + lifeScoreCount;
-            }
-
-            if (lifeScoreCount == 0)
-            {
-                if (GameManager.Instance != null)
-                {
-                    GameManager.Instance.GameOver();
-                }
-                else
-                {
-                    Debug.LogError("GameManager instance not found!");
-                }
-            }
+            UpdateLifeText();
+            CheckGameOver();
 
             canDamage = false;
             StartCoroutine(WaitForDamage());
+        }
+    }
+
+    private void UpdateLifeText()
+    {
+        lifeText.text = "x" + Mathf.Max(lifeScoreCount, 0);
+    }
+
+    private void CheckGameOver()
+    {
+        if (lifeScoreCount <= 0)
+        {
+            if (GameManager.Instance != null)
+            {
+                GameManager.Instance.GameOver();
+            }
+            else
+            {
+                Debug.LogError("GameManager instance not found!");
+            }
         }
     }
 
