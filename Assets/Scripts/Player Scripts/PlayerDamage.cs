@@ -1,15 +1,13 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.UI;
-using UnityEngine.SceneManagement;
+using System.Collections;
 
 public class PlayerDamage : MonoBehaviour
 {
     private Text lifeText;
     public int lifeScoreCount;
     private bool canDamage;
-    public Transform respawnPoint; // Add this line to define the respawn point
+    public Transform respawnPoint;
 
     void Awake()
     {
@@ -28,7 +26,6 @@ public class PlayerDamage : MonoBehaviour
     {
         if (canDamage)
         {
-            Debug.Log("Dealing Damage");
             lifeScoreCount--;
 
             if (lifeScoreCount >= 0)
@@ -38,9 +35,14 @@ public class PlayerDamage : MonoBehaviour
 
             if (lifeScoreCount == 0)
             {
-                // RESTART THE GAME
-                Time.timeScale = 0f;
-                StartCoroutine(RestartGame());
+                if (GameManager.Instance != null)
+                {
+                    GameManager.Instance.GameOver();
+                }
+                else
+                {
+                    Debug.LogError("GameManager instance not found!");
+                }
             }
 
             canDamage = false;
@@ -52,8 +54,7 @@ public class PlayerDamage : MonoBehaviour
     {
         if (canDamage)
         {
-            Debug.Log("Taking Damage: " + damage);
-            lifeScoreCount -= damage / 100; // Assuming damage is a percentage
+            lifeScoreCount -= damage / 100;
 
             if (lifeScoreCount >= 0)
             {
@@ -62,9 +63,14 @@ public class PlayerDamage : MonoBehaviour
 
             if (lifeScoreCount == 0)
             {
-                // RESTART THE GAME
-                Time.timeScale = 0f;
-                StartCoroutine(RestartGame());
+                if (GameManager.Instance != null)
+                {
+                    GameManager.Instance.GameOver();
+                }
+                else
+                {
+                    Debug.LogError("GameManager instance not found!");
+                }
             }
 
             canDamage = false;
@@ -72,7 +78,7 @@ public class PlayerDamage : MonoBehaviour
         }
     }
 
-    public void Respawn() // Add this method to handle respawning
+    public void Respawn()
     {
         transform.position = respawnPoint.position;
     }
@@ -81,12 +87,5 @@ public class PlayerDamage : MonoBehaviour
     {
         yield return new WaitForSeconds(2f);
         canDamage = true;
-        Debug.Log("Can take damage again");
-    }
-
-    IEnumerator RestartGame()
-    {
-        yield return new WaitForSecondsRealtime(2f);
-        SceneManager.LoadScene("Gameplay");
     }
 }

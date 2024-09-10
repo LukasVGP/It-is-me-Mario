@@ -2708,10 +2708,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 36db0290c87be4a4bbd142b321e08011, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  health: 100
   player: {fileID: 0}
   isFlipped: 0
-  isDefeated: 0
-  health: 100
+  stone: {fileID: 0}
+  attackInstantiate: {fileID: 0}
+  chaseSpeed: 2.5
+  attackRange: 3
+  meleeDamage: 20
 --- !u!61 &224373407
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -7073,7 +7077,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -87, y: 91}
+  m_AnchoredPosition: {x: -655, y: 410}
   m_SizeDelta: {x: 207.96, y: 80.668}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &499134169
@@ -12768,6 +12772,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   nextLevel: Level 3
+  isFinalLevel: 0
 --- !u!212 &864901857
 SpriteRenderer:
   m_ObjectHideFlags: 0
@@ -13718,7 +13723,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -88, y: 174}
+  m_AnchoredPosition: {x: -658, y: 489}
   m_SizeDelta: {x: 207.96, y: 80.668}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &929233329

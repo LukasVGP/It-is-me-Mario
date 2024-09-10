@@ -1,48 +1,54 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
+using System.Collections;
 
 public class BossHealth : MonoBehaviour
 {
-
     private Animator anim;
     private int health = 100;
     private bool canDamage;
-    private Boss boss; // Reference to the Boss script
+    private Boss boss;
 
     public GameObject deathEffect;
     public bool isInvulnerable = false;
-
-    public void takeDamage(int damage)
-    {
-        if (!isInvulnerable) return;
-
-        health -= damage;
-
-        if (health <= 50) 
-        {
-            GetComponent<Animator>().SetBool("IsEnraged", true);      
-        }
-        
-          
-      if (health <= 0)
-            {
-                Die();
-            }
-        
-    }
-
-    void Die()
-    {
-        Instantiate(deathEffect, transform.position, Quaternion.identity);
-        Destroy(gameObject);
-    }
 
     void Awake()
     {
         anim = GetComponent<Animator>();
         canDamage = true;
-        boss = GetComponent<Boss>(); // Initialize the Boss reference
+        boss = GetComponent<Boss>();
+    }
+
+    public void TakeDamage(int damage)
+    {
+        if (isInvulnerable) return;
+
+        health -= damage;
+
+        if (health <= 50)
+        {
+            GetComponent<Animator>().SetBool("IsEnraged", true);
+        }
+
+        if (health <= 0)
+        {
+            Die();
+        }
+    }
+
+    void Die()
+    {
+        if (deathEffect != null)
+        {
+            Instantiate(deathEffect, transform.position, Quaternion.identity);
+        }
+        if (boss != null)
+        {
+            boss.DefeatBoss();
+        }
+        else
+        {
+            Debug.LogError("Boss component is null!");
+        }
     }
 
     IEnumerator WaitForDamage()
@@ -57,19 +63,12 @@ public class BossHealth : MonoBehaviour
         {
             if (target.tag == MyTags.BULLET_TAG)
             {
-                health--;
+                TakeDamage(1);
                 canDamage = false;
 
                 if (health == 0)
                 {
-                    GetComponent<BossScript>().DeactivateBossScript();
-                    anim.Play("BossDead");
-
-                    // Call the DefeatBoss method when the boss is defeated
-                    if (boss != null)
-                    {
-                        boss.DefeatBoss();
-                    }
+                    Die();
                 }
 
                 StartCoroutine(WaitForDamage());
@@ -77,37 +76,3 @@ public class BossHealth : MonoBehaviour
         }
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

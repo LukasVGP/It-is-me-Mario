@@ -1,41 +1,22 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class Boss_Run : StateMachineBehaviour
 {
-
-    public float speed=2.5f;
-    public float attackRange=3f;
-
-    Transform player;
-    Rigidbody2D rb;
     Boss boss;
+
     override public void OnStateEnter(Animator animator, AnimatorStateInfo stateInfo, int layerIndex)
     {
-        player = GameObject.FindGameObjectsWithTag("Player")[0].transform;
-        rb= animator.GetComponent<Rigidbody2D>();
-        boss= animator.GetComponent<Boss>();
+        boss = animator.GetComponent<Boss>();
     }
 
- 
     override public void OnStateUpdate(Animator animator, AnimatorStateInfo stateInfo, int layerIndex)
     {
-        boss.lookAtPlayer();
-        Vector2 target = new Vector2(player.position.x, rb.position.y);
-        Vector2 newPos= Vector2.MoveTowards(rb.position, target, speed * Time.fixedDeltaTime);
-        rb.MovePosition(newPos);
-
-       if( Vector2.Distance(player.position, rb.position)<=attackRange)
-        {
-           animator.SetTrigger("Attack");
-       }
+        boss.LookAtPlayer();
+        boss.ChasePlayer();
     }
 
     override public void OnStateExit(Animator animator, AnimatorStateInfo stateInfo, int layerIndex)
     {
         animator.ResetTrigger("Attack");
     }
-
- 
 }
