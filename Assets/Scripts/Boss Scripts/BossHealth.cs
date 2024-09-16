@@ -1,32 +1,30 @@
-﻿using UnityEngine;
-using System.Collections;
+﻿using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
 
 public class BossHealth : MonoBehaviour
 {
-    private Animator anim;
-    private int health = 100;
-    private bool canDamage;
-    private Boss boss;
-
+    public int health = 500;
     public GameObject deathEffect;
     public bool isInvulnerable = false;
 
-    void Awake()
+    private Animator anim;
+
+    void Start()
     {
         anim = GetComponent<Animator>();
-        canDamage = true;
-        boss = GetComponent<Boss>();
     }
 
     public void TakeDamage(int damage)
     {
-        if (isInvulnerable) return;
+        if (isInvulnerable)
+            return;
 
         health -= damage;
 
-        if (health <= 50)
+        if (health <= 200)
         {
-            GetComponent<Animator>().SetBool("IsEnraged", true);
+            EnterEnragedState();
         }
 
         if (health <= 0)
@@ -35,43 +33,27 @@ public class BossHealth : MonoBehaviour
         }
     }
 
+    private void EnterEnragedState()
+    {
+        anim.SetBool("IsEnraged", true);
+        
+    }
+
     void Die()
     {
-        if (deathEffect != null)
-        {
-            Instantiate(deathEffect, transform.position, Quaternion.identity);
-        }
-        if (boss != null)
-        {
-            boss.DefeatBoss();
-        }
-        else
-        {
-            Debug.LogError("Boss component is null!");
-        }
+        Instantiate(deathEffect, transform.position, Quaternion.identity);
+        Destroy(gameObject);
     }
 
-    IEnumerator WaitForDamage()
+    void OnTriggerEnter2D(Collider2D other)
     {
-        yield return new WaitForSeconds(2f);
-        canDamage = true;
-    }
-
-    void OnTriggerEnter2D(Collider2D target)
-    {
-        if (canDamage)
+        if (other.CompareTag(MyTags.BULLET_TAG))
         {
-            if (target.tag == MyTags.BULLET_TAG)
+            FireBullet bullet = other.GetComponent<FireBullet>();
+            if (bullet != null)
             {
-                TakeDamage(1);
-                canDamage = false;
-
-                if (health == 0)
-                {
-                    Die();
-                }
-
-                StartCoroutine(WaitForDamage());
+                TakeDamage(10); // Adjust this value as needed
+                bullet.gameObject.SetActive(false);
             }
         }
     }

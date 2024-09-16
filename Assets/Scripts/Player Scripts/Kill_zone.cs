@@ -2,24 +2,21 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class KillZone : MonoBehaviour
+public class Kill_zone : MonoBehaviour
 {
-    void OnTriggerEnter2D(Collider2D other)
+    private void OnTriggerEnter2D(Collider2D collision)
     {
-        Debug.Log("Entered KillZone: " + other.name); // Log when something enters the KillZone
-
-        if (other.CompareTag("Player"))
+        if (collision.CompareTag("Player"))
         {
-            PlayerDamage playerDamage = other.GetComponent<PlayerDamage>();
+            PlayerDamage playerDamage = collision.GetComponent<PlayerDamage>();
             if (playerDamage != null)
             {
-                Debug.Log("PlayerDamage component found. Dealing damage and respawning.");
                 playerDamage.DealDamage();
                 playerDamage.Respawn();
             }
             else
             {
-                Debug.LogError("PlayerDamage component not found on the player.");
+                Debug.LogError("PlayerDamage component not found on the player!");
             }
         }
     }

@@ -23,6 +23,21 @@ public class GruzMother : MonoBehaviour
     [SerializeField] Transform goundCheckWall;
     [SerializeField] float groundCheckRadius;
     [SerializeField] LayerMask groundLayer;
+
+    [Header("Combat")]
+    [SerializeField] int damageAmount = 10;
+    [SerializeField] float damageInterval = 0.5f;
+    private float lastDamageTime;
+    [SerializeField] float pushForce = 10f;
+
+    [Header("Activation")]
+    [SerializeField] private bool isActivated = false;
+    [SerializeField] private Vector3 initialPosition;
+
+   
+  
+   
+
     private bool isTouchingUp;
     private bool isTouchingDown;
     private bool isTouchingWall;
@@ -42,14 +57,43 @@ public class GruzMother : MonoBehaviour
         attackMovementDirection.Normalize();
         enemyRB = GetComponent<Rigidbody2D>();
         enemyAnim = GetComponent<Animator>();
+
+        initialPosition = transform.position;
+        if (!isActivated)
+        {
+            DisableBoss();
+        }
     }
 
     // Update is called once per frame
     void Update()
     {
+        if (!isActivated) return;
+
         isTouchingUp = Physics2D.OverlapCircle(goundCheckUp.position, groundCheckRadius, groundLayer); 
         isTouchingDown = Physics2D.OverlapCircle(goundCheckDown.position, groundCheckRadius, groundLayer); 
         isTouchingWall = Physics2D.OverlapCircle(goundCheckWall.position, groundCheckRadius, groundLayer);
+    }
+
+    public void ActivateBoss()
+    {
+        isActivated = true;
+        EnableBoss();
+    }
+
+    private void DisableBoss()
+    {
+        enemyRB.simulated = false;
+        enemyAnim.enabled = false;
+        this.enabled = false;
+    }
+
+    private void EnableBoss()
+    {
+        enemyRB.simulated = true;
+        enemyAnim.enabled = true;
+        this.enabled = true;
+        transform.position = initialPosition;
     }
 
     void RandomStatePicker()
@@ -65,8 +109,37 @@ public class GruzMother : MonoBehaviour
         }
     }
 
-   public void IdelState()
+    private void OnCollisionStay2D(Collision2D collision)
     {
+        if (!isActivated) return;
+
+        if (collision.gameObject.CompareTag("Player"))
+        {
+            // Push the player
+            Rigidbody2D playerRb = collision.gameObject.GetComponent<Rigidbody2D>();
+            if (playerRb != null)
+            {
+                Vector2 pushDirection = (collision.transform.position - transform.position).normalized;
+                playerRb.AddForce(pushDirection * pushForce, ForceMode2D.Impulse);
+            }
+
+            // Deal damage
+            if (Time.time - lastDamageTime >= damageInterval)
+            {
+                PlayerDamage playerDamage = collision.gameObject.GetComponent<PlayerDamage>();
+                if (playerDamage != null)
+                {
+                    playerDamage.TakeDamage(damageAmount);
+                    lastDamageTime = Time.time;
+                }
+            }
+        }
+    }
+
+        public void IdelState()
+    {
+        if (!isActivated) return;
+
         if (isTouchingUp && goingUp)
         {
             ChangeDirection();
@@ -91,6 +164,8 @@ public class GruzMother : MonoBehaviour
     } 
    public void AttackUpNDownState()
     {
+        if (!isActivated) return;
+
         if (isTouchingUp && goingUp)
         {
             ChangeDirection();
@@ -116,7 +191,8 @@ public class GruzMother : MonoBehaviour
 
     public void AttackPlayerState()
     {
-       
+        if (!isActivated) return;
+
         if (!hasPlayerPositon)
         {
             FlipTowardsPlayer();

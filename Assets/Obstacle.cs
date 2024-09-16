@@ -4,16 +4,33 @@ using UnityEngine;
 
 public class Obstacles : MonoBehaviour
 {
-    private Rigidbody2D myBody;
-
-    
+    [SerializeField] private float pushForce = 10f;
+    [SerializeField] private float upwardForce = 5f;
 
     void OnTriggerEnter2D(Collider2D col)
     {
         if (col.CompareTag("Player"))
         {
-            col.GetComponent<PlayerDamage>().DealDamage();
+            // Deal damage
+            PlayerDamage playerDamage = col.GetComponent<PlayerDamage>();
+            if (playerDamage != null)
+            {
+                playerDamage.DealDamage();
+            }
+
+            // Push player
+            Rigidbody2D playerRb = col.GetComponent<Rigidbody2D>();
+            if (playerRb != null)
+            {
+                // Calculate direction away from the obstacle
+                Vector2 pushDirection = (col.transform.position - transform.position).normalized;
+
+                // Apply horizontal force (push back)
+                playerRb.AddForce(pushDirection * pushForce, ForceMode2D.Impulse);
+
+                // Apply upward force
+                playerRb.AddForce(Vector2.up * upwardForce, ForceMode2D.Impulse);
+            }
         }
     }
-
 }

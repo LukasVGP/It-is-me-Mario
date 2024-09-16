@@ -1,13 +1,18 @@
 ﻿using UnityEngine;
 using UnityEngine.UI;
 using System.Collections;
+using UnityEngine.SceneManagement;
+
 
 public class PlayerDamage : MonoBehaviour
 {
     private Text lifeText;
     public int lifeScoreCount;
     private bool canDamage;
-    public Transform respawnPoint;
+    private PlayerRespawn playerRespawn;
+    public string gameOverSceneName = "GameOverScene"; // Set this in the inspector
+    [SerializeField] private float invincibilityDuration = 1.5f;
+    private bool isInvincible=false;
 
     void Awake()
     {
@@ -15,6 +20,7 @@ public class PlayerDamage : MonoBehaviour
         lifeScoreCount = 3;
         UpdateLifeText();
         canDamage = true;
+        playerRespawn = GetComponent<PlayerRespawn>();
     }
 
     void Start()
@@ -29,7 +35,6 @@ public class PlayerDamage : MonoBehaviour
             lifeScoreCount--;
             UpdateLifeText();
             CheckGameOver();
-
             canDamage = false;
             StartCoroutine(WaitForDamage());
         }
@@ -37,16 +42,17 @@ public class PlayerDamage : MonoBehaviour
 
     public void TakeDamage(int damage)
     {
-        if (canDamage)
-        {
-            lifeScoreCount -= damage / 100;
-            UpdateLifeText();
-            CheckGameOver();
+        if (isInvincible) return;
 
-            canDamage = false;
-            StartCoroutine(WaitForDamage());
-        }
+        // Apply damage
+        lifeScoreCount -= damage;
+        UpdateLifeText();
+        CheckGameOver();
+
+        // Start invincibility
+        StartCoroutine(InvincibilityCoroutine());
     }
+
 
     private void UpdateLifeText()
     {
@@ -57,25 +63,38 @@ public class PlayerDamage : MonoBehaviour
     {
         if (lifeScoreCount <= 0)
         {
-            if (GameManager.Instance != null)
-            {
-                GameManager.Instance.GameOver();
-            }
-            else
-            {
-                Debug.LogError("GameManager instance not found!");
-            }
+            GameOver();
         }
     }
 
-    public void Respawn()
+    private void GameOver()
     {
-        transform.position = respawnPoint.position;
+        // Load the game over scene
+        SceneManager.LoadScene(gameOverSceneName);
     }
 
     IEnumerator WaitForDamage()
     {
         yield return new WaitForSeconds(2f);
         canDamage = true;
+    }
+
+    private IEnumerator InvincibilityCoroutine()
+    {
+        isInvincible = true;
+        yield return new WaitForSeconds(invincibilityDuration);
+        isInvincible = false;
+    }
+
+    public void Respawn()
+    {
+        if (playerRespawn != null)
+        {
+            playerRespawn.Respawn();
+        }
+        else
+        {
+            Debug.LogError("PlayerRespawn component not found!");
+        }
     }
 }
