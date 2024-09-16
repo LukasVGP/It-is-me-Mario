@@ -5,6 +5,7 @@ using System.Collections;
 public class PlayerDamage : MonoBehaviour
 {
     private Text lifeText;
+    private Text healthText;
     public int lifeScoreCount;
     private bool canDamage;
     public Transform respawnPoint;
@@ -19,6 +20,7 @@ public class PlayerDamage : MonoBehaviour
     void Awake()
     {
         lifeText = GameObject.Find("LifeText").GetComponent<Text>();
+        healthText = GameObject.Find("HealthText").GetComponent<Text>();
         lifeScoreCount = 3;
         UpdateLifeText();
         canDamage = true;
@@ -26,6 +28,7 @@ public class PlayerDamage : MonoBehaviour
         anim = GetComponent<Animator>();
         spriteRenderer = GetComponent<SpriteRenderer>();
         currentHealth = maxHealth;
+        UpdateHealthText(); // Add this line to update health text immediately
     }
 
     void Start()
@@ -39,6 +42,7 @@ public class PlayerDamage : MonoBehaviour
         {
             currentHealth -= 35;
             UpdateLifeText();
+            UpdateHealthText(); // Update health text when damage is taken
             if (currentHealth > 0)
             {
                 RepelPlayer();
@@ -59,6 +63,7 @@ public class PlayerDamage : MonoBehaviour
         {
             currentHealth -= damage;
             UpdateLifeText();
+            UpdateHealthText(); // Update health text when damage is taken
             if (currentHealth > 0)
             {
                 RepelPlayer();
@@ -90,7 +95,12 @@ public class PlayerDamage : MonoBehaviour
 
     private void UpdateLifeText()
     {
-        lifeText.text = "x" + Mathf.Max(lifeScoreCount, 0) + " HP: " + currentHealth;
+        lifeText.text = "x" + Mathf.Max(lifeScoreCount, 0);
+    }
+
+    private void UpdateHealthText()
+    {
+        healthText.text = "HP: " + currentHealth;
     }
 
     public void Respawn()
@@ -107,6 +117,7 @@ public class PlayerDamage : MonoBehaviour
             gameObject.SetActive(true);
             currentHealth = maxHealth;
             UpdateLifeText();
+            UpdateHealthText(); // Update health text when respawning
         }
     }
 
