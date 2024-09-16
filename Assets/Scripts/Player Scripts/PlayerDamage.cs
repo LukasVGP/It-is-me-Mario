@@ -11,7 +11,6 @@ public class PlayerDamage : MonoBehaviour
     private Rigidbody2D rb;
     private Animator anim;
     public float repelForce = 5f;
-    public float deathJumpForce = 10f;
     private bool isDead = false;
     private SpriteRenderer spriteRenderer;
     public int maxHealth = 100;
@@ -47,7 +46,7 @@ public class PlayerDamage : MonoBehaviour
             }
             else
             {
-                StartCoroutine(DeathSequence());
+                Die();
             }
             canDamage = false;
             StartCoroutine(WaitForDamage());
@@ -67,7 +66,7 @@ public class PlayerDamage : MonoBehaviour
             }
             else
             {
-                StartCoroutine(DeathSequence());
+                Die();
             }
             canDamage = false;
             StartCoroutine(WaitForDamage());
@@ -81,15 +80,11 @@ public class PlayerDamage : MonoBehaviour
         rb.AddForce(repelDirection * repelForce, ForceMode2D.Impulse);
     }
 
-    private IEnumerator DeathSequence()
+    private void Die()
     {
         isDead = true;
-        anim.SetTrigger("Death");
         rb.velocity = Vector2.zero;
-        rb.AddForce(Vector2.up * deathJumpForce, ForceMode2D.Impulse);
-        yield return new WaitForSeconds(1f);
         gameObject.SetActive(false);
-        yield return new WaitForSeconds(1f);
         Respawn();
     }
 
@@ -100,9 +95,6 @@ public class PlayerDamage : MonoBehaviour
 
     public void Respawn()
     {
-        isDead = false;
-        transform.position = respawnPoint.position;
-        gameObject.SetActive(true);
         lifeScoreCount--;
         if (lifeScoreCount < 0)
         {
@@ -110,9 +102,11 @@ public class PlayerDamage : MonoBehaviour
         }
         else
         {
+            isDead = false;
+            transform.position = respawnPoint.position;
+            gameObject.SetActive(true);
             currentHealth = maxHealth;
             UpdateLifeText();
-            anim.SetTrigger("Respawn");
         }
     }
 
@@ -130,5 +124,10 @@ public class PlayerDamage : MonoBehaviour
             yield return new WaitForSeconds(0.1f);
         }
         spriteRenderer.enabled = true;
+    }
+
+    public void KillZoneDeath()
+    {
+        Die();
     }
 }

@@ -2432,6 +2432,10 @@ PrefabInstance:
       propertyPath: m_LocalRotation.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 50201141641759970, guid: deb81019505174616922fb5b092e2611, type: 3}
+      propertyPath: m_Constraints
+      value: 4
+      objectReference: {fileID: 0}
     - target: {fileID: 61530700178921570, guid: deb81019505174616922fb5b092e2611, type: 3}
       propertyPath: m_Size.x
       value: 2.8
@@ -14463,7 +14467,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 1736005830279442, guid: 2be69eb52ddda427383bd9eef461e520, type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 4314973218937688, guid: 2be69eb52ddda427383bd9eef461e520, type: 3}
       propertyPath: m_RootOrder
@@ -36354,7 +36358,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4038629572465822, guid: faaef2337c68447b79977529f4878950, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -4.5
+      value: -6.38
       objectReference: {fileID: 0}
     - target: {fileID: 4038629572465822, guid: faaef2337c68447b79977529f4878950, type: 3}
       propertyPath: m_LocalPosition.y
@@ -36415,6 +36419,10 @@ PrefabInstance:
     - target: {fileID: 114789007271801040, guid: faaef2337c68447b79977529f4878950, type: 3}
       propertyPath: groundCheckDistance
       value: 0.58
+      objectReference: {fileID: 0}
+    - target: {fileID: 114855583041589088, guid: faaef2337c68447b79977529f4878950, type: 3}
+      propertyPath: repelForce
+      value: 15
       objectReference: {fileID: 0}
     - target: {fileID: 114855583041589088, guid: faaef2337c68447b79977529f4878950, type: 3}
       propertyPath: respawnPoint
