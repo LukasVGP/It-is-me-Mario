@@ -16,6 +16,7 @@ TagManager:
   - Enemy
   - Hazard
   - GruzMother
+  - Turret
   layers:
   - Default
   - TransparentFX

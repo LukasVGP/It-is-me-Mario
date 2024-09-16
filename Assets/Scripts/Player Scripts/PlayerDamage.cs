@@ -42,9 +42,13 @@ public class PlayerDamage : MonoBehaviour
 
     public void TakeDamage(int damage)
     {
-        if (isInvincible) return;
+        if (isInvincible)
+        {
+            Debug.Log("Player is invincible. Damage ignored.");
+            return;
+        }
 
-        // Apply damage
+        Debug.Log($"Player taking {damage} damage. Current life: {lifeScoreCount}");
         lifeScoreCount -= damage;
         UpdateLifeText();
         CheckGameOver();
@@ -52,17 +56,16 @@ public class PlayerDamage : MonoBehaviour
         // Start invincibility
         StartCoroutine(InvincibilityCoroutine());
     }
-
-
     private void UpdateLifeText()
     {
         lifeText.text = "x" + Mathf.Max(lifeScoreCount, 0);
+        Debug.Log($"Updated life text: {lifeText.text}");
     }
-
     private void CheckGameOver()
     {
         if (lifeScoreCount <= 0)
         {
+            Debug.Log("Player health reached 0. Triggering Game Over.");
             GameOver();
         }
     }
@@ -82,8 +85,10 @@ public class PlayerDamage : MonoBehaviour
     private IEnumerator InvincibilityCoroutine()
     {
         isInvincible = true;
+        Debug.Log("Player invincibility started.");
         yield return new WaitForSeconds(invincibilityDuration);
         isInvincible = false;
+        Debug.Log("Player invincibility ended.");
     }
 
     public void Respawn()

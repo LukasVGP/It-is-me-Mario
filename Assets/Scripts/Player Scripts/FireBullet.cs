@@ -50,12 +50,12 @@ public class FireBullet : MonoBehaviour
     {
         if (target.gameObject.tag == MyTags.BEETLE_TAG || target.gameObject.tag == MyTags.SNAIL_TAG
             || target.gameObject.tag == MyTags.SPIDER_TAG || target.gameObject.tag == MyTags.BOSS_TAG
-            || target.gameObject.tag == "GruzMother")
+            || target.gameObject.tag == "GruzMother" || target.gameObject.tag == "Turret")
         {
             anim.Play("Explode");
             canMove = false;
 
-            // Deal damage to the boss or GruzMother
+            // Deal damage to the boss, GruzMother, or Turret
             if (target.gameObject.tag == MyTags.BOSS_TAG)
             {
                 BossHealth bossHealth = target.GetComponent<BossHealth>();
@@ -70,6 +70,14 @@ public class FireBullet : MonoBehaviour
                 if (gruzMotherHealth != null)
                 {
                     gruzMotherHealth.TakeDamage(10); // Adjust damage as needed
+                }
+            }
+            else if (target.gameObject.tag == "Turret")
+            {
+                TurretHealth turretHealth = target.GetComponent<TurretHealth>();
+                if (turretHealth != null)
+                {
+                    turretHealth.TakeDamage(10); // Adjust damage as needed
                 }
             }
 
