@@ -25793,7 +25793,7 @@ GameObject:
   - component: {fileID: 1496695869}
   - component: {fileID: 1496695868}
   m_Layer: 5
-  m_Name: Coins (1)
+  m_Name: Health
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
