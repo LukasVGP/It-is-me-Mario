@@ -4,18 +4,23 @@ public class PlayerMovement : MonoBehaviour
 {
     public float speed = 5f;
     public float jumpPower = 12f;
-    public float groundCheckDistance = 0.1f;
     public LayerMask groundLayer;
+    public float groundCheckRadius = 0.2f;
 
     private Rigidbody2D myBody;
     private Animator anim;
-    private bool isGrounded;
-    private bool isJumping;
+    private bool isGrounded = false;
+    private Transform groundCheck;
 
     void Awake()
     {
         myBody = GetComponent<Rigidbody2D>();
         anim = GetComponent<Animator>();
+
+        // Create and position the ground check object
+        groundCheck = new GameObject("GroundCheck").transform;
+        groundCheck.SetParent(transform);
+        groundCheck.localPosition = new Vector3(0, -0.5f, 0); // Adjust this value based on your character's size
     }
 
     void Update()
@@ -32,7 +37,6 @@ public class PlayerMovement : MonoBehaviour
     void PlayerWalk()
     {
         float h = Input.GetAxisRaw("Horizontal");
-
         if (h > 0)
         {
             myBody.velocity = new Vector2(speed, myBody.velocity.y);
@@ -58,31 +62,32 @@ public class PlayerMovement : MonoBehaviour
         transform.localScale = tempScale;
     }
 
+    void HandleJump()
+    {
+        if (Input.GetButtonDown("Jump") && isGrounded)
+        {
+            myBody.velocity = new Vector2(myBody.velocity.x, jumpPower);
+            anim.SetBool("Jump", true);
+            isGrounded = false;
+        }
+    }
+
     void CheckGrounded()
     {
-        RaycastHit2D hit = Physics2D.Raycast(transform.position, Vector2.down, groundCheckDistance, groundLayer);
-        isGrounded = hit.collider != null;
+        isGrounded = Physics2D.OverlapCircle(groundCheck.position, groundCheckRadius, groundLayer);
 
-        if (isGrounded && myBody.velocity.y <= 0)
+        if (isGrounded)
         {
-            isJumping = false;
             anim.SetBool("Jump", false);
         }
     }
 
-    void HandleJump()
+    void OnDrawGizmosSelected()
     {
-        if (Input.GetButtonDown("Jump") && isGrounded && !isJumping)
+        if (groundCheck != null)
         {
-            myBody.velocity = new Vector2(myBody.velocity.x, jumpPower);
-            isJumping = true;
-            anim.SetBool("Jump", true);
+            Gizmos.color = Color.red;
+            Gizmos.DrawWireSphere(groundCheck.position, groundCheckRadius);
         }
-    }
-
-    void OnDrawGizmos()
-    {
-        Gizmos.color = Color.red;
-        Gizmos.DrawLine(transform.position, transform.position + Vector3.down * groundCheckDistance);
     }
 }
