@@ -13,6 +13,9 @@ public class PlayerDamage : MonoBehaviour
     public float repelForce = 5f;
     public float deathJumpForce = 10f;
     private bool isDead = false;
+    private SpriteRenderer spriteRenderer;
+    public int maxHealth = 100;
+    private int currentHealth;
 
     void Awake()
     {
@@ -22,6 +25,8 @@ public class PlayerDamage : MonoBehaviour
         canDamage = true;
         rb = GetComponent<Rigidbody2D>();
         anim = GetComponent<Animator>();
+        spriteRenderer = GetComponent<SpriteRenderer>();
+        currentHealth = maxHealth;
     }
 
     void Start()
@@ -33,20 +38,17 @@ public class PlayerDamage : MonoBehaviour
     {
         if (canDamage && !isDead)
         {
-            lifeScoreCount--;
+            currentHealth -= 35;
             UpdateLifeText();
-
-            if (lifeScoreCount > 0)
+            if (currentHealth > 0)
             {
-                // First hit: repel
                 RepelPlayer();
+                StartCoroutine(BlinkEffect());
             }
             else
             {
-                // Second hit: death
                 StartCoroutine(DeathSequence());
             }
-
             canDamage = false;
             StartCoroutine(WaitForDamage());
         }
@@ -56,18 +58,17 @@ public class PlayerDamage : MonoBehaviour
     {
         if (canDamage && !isDead)
         {
-            lifeScoreCount -= damage / 50; // Adjust this value to balance boss damage
+            currentHealth -= damage;
             UpdateLifeText();
-
-            if (lifeScoreCount > 0)
+            if (currentHealth > 0)
             {
                 RepelPlayer();
+                StartCoroutine(BlinkEffect());
             }
             else
             {
                 StartCoroutine(DeathSequence());
             }
-
             canDamage = false;
             StartCoroutine(WaitForDamage());
         }
@@ -86,19 +87,15 @@ public class PlayerDamage : MonoBehaviour
         anim.SetTrigger("Death");
         rb.velocity = Vector2.zero;
         rb.AddForce(Vector2.up * deathJumpForce, ForceMode2D.Impulse);
-
         yield return new WaitForSeconds(1f);
-
         gameObject.SetActive(false);
-
         yield return new WaitForSeconds(1f);
-
         Respawn();
     }
 
     private void UpdateLifeText()
     {
-        lifeText.text = "x" + Mathf.Max(lifeScoreCount, 0);
+        lifeText.text = "x" + Mathf.Max(lifeScoreCount, 0) + " HP: " + currentHealth;
     }
 
     public void Respawn()
@@ -106,14 +103,32 @@ public class PlayerDamage : MonoBehaviour
         isDead = false;
         transform.position = respawnPoint.position;
         gameObject.SetActive(true);
-        lifeScoreCount = 3;
-        UpdateLifeText();
-        anim.SetTrigger("Respawn");
+        lifeScoreCount--;
+        if (lifeScoreCount < 0)
+        {
+            GameManager.Instance.GameOver();
+        }
+        else
+        {
+            currentHealth = maxHealth;
+            UpdateLifeText();
+            anim.SetTrigger("Respawn");
+        }
     }
 
     IEnumerator WaitForDamage()
     {
         yield return new WaitForSeconds(2f);
         canDamage = true;
+    }
+
+    IEnumerator BlinkEffect()
+    {
+        for (int i = 0; i < 10; i++)
+        {
+            spriteRenderer.enabled = !spriteRenderer.enabled;
+            yield return new WaitForSeconds(0.1f);
+        }
+        spriteRenderer.enabled = true;
     }
 }

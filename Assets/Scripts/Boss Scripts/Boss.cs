@@ -6,14 +6,11 @@ public class Boss : MonoBehaviour
     public int health = 100;
     public Transform player;
     public bool isFlipped = false;
-
     public GameObject stone;
     public Transform attackInstantiate;
-
     public float chaseSpeed = 2.5f;
     public float attackRange = 3f;
     public int meleeDamage = 20;
-
     private Animator anim;
     private bool isChasing;
     private string coroutine_Name = "StartAttack";
@@ -65,7 +62,6 @@ public class Boss : MonoBehaviour
     {
         Vector3 flipped = transform.localScale;
         flipped.z *= -1f;
-
         if (transform.position.x > player.position.x && !isFlipped)
         {
             transform.localScale = flipped;
@@ -83,7 +79,6 @@ public class Boss : MonoBehaviour
     public void ChasePlayer()
     {
         transform.position = Vector2.MoveTowards(transform.position, player.position, chaseSpeed * Time.deltaTime);
-
         if (Vector2.Distance(transform.position, player.position) <= attackRange)
         {
             isChasing = false;
@@ -120,7 +115,6 @@ public class Boss : MonoBehaviour
         while (true)
         {
             yield return new WaitForSeconds(Random.Range(2f, 5f));
-
             if (Vector2.Distance(transform.position, player.position) <= attackRange)
             {
                 anim.Play("BossAttack");

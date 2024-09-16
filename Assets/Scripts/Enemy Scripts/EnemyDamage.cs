@@ -1,23 +1,21 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class EnemyDamage : MonoBehaviour
 {
-
     public float pushBackForce = 5f;
 
     private void OnCollisionEnter2D(Collision2D collision)
     {
-        Debug.Log("Collision detected with: " + collision.gameObject.name);
-        if (collision.gameObject.layer == LayerMask.NameToLayer("Player"))
+        if (collision.gameObject.CompareTag("Player"))
         {
-            Debug.Log("Collision with Player");
-            PushBackPlayer(collision.transform);
+            PlayerDamage playerDamage = collision.gameObject.GetComponent<PlayerDamage>();
+            if (playerDamage != null)
+            {
+                playerDamage.DealDamage();
+                PushBackPlayer(collision.transform);
+            }
         }
     }
-
-   
 
     private void PushBackPlayer(Transform player)
     {
@@ -25,7 +23,6 @@ public class EnemyDamage : MonoBehaviour
         Rigidbody2D playerRb = player.GetComponent<Rigidbody2D>();
         if (playerRb != null)
         {
-            Debug.Log("Pushing back player");
             playerRb.AddForce(pushDirection * pushBackForce, ForceMode2D.Impulse);
         }
     }
