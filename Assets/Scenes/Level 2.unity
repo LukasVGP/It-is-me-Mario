@@ -2843,8 +2843,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3dab583146801ef4cbe878423e03577d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  attackDamage: 100
-  enragedAttackDamage: 200
+  attackDamage: 1
+  enragedAttackDamage: 2
   attackOffset: {x: 0, y: 0, z: 0}
   attackRange: 3
   attackMask:
