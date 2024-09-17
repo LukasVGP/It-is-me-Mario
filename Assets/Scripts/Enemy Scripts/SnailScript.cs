@@ -4,49 +4,63 @@ using UnityEngine;
 
 public class SnailScript : MonoBehaviour
 {
-
     public float moveSpeed = 1f;
+    public float collisionCheckDistance = 0.1f;
+    public float directionChangeDelay = 0.5f;
+
     private Rigidbody2D myBody;
     private Animator anim;
     public LayerMask playerLayer;
-    private bool moveLeft;
-    private bool canMove;
+    private bool moveLeft = true;
+    private bool canMove = true;
     private bool stunned;
-    public Transform left_Collision, right_Collision, top_Collision, down_Collision;
-    private Vector3 left_Collision_Pos, right_Collision_Pos;
+    private float lastDirectionChangeTime;
+
+    public Transform left_Collision, right_Collision, top_Collision;
 
     void Awake()
     {
         myBody = GetComponent<Rigidbody2D>();
         anim = GetComponent<Animator>();
-        left_Collision_Pos = left_Collision.position;
-        right_Collision_Pos = right_Collision.position;
-    }
-
-    void Start()
-    {
-        moveLeft = true;
-        canMove = true;
+        lastDirectionChangeTime = Time.time;
     }
 
     void Update()
     {
         if (canMove)
         {
-            if (moveLeft)
-            {
-                myBody.velocity = new Vector2(-moveSpeed, myBody.velocity.y);
-            }
-            else
-            {
-                myBody.velocity = new Vector2(moveSpeed, myBody.velocity.y);
-            }
+            Move();
         }
         CheckCollision();
     }
 
+    void Move()
+    {
+        if (moveLeft)
+        {
+            myBody.velocity = new Vector2(-moveSpeed, myBody.velocity.y);
+        }
+        else
+        {
+            myBody.velocity = new Vector2(moveSpeed, myBody.velocity.y);
+        }
+    }
+
     void CheckCollision()
     {
+        // Wall detection
+        Vector2 direction = moveLeft ? Vector2.left : Vector2.right;
+        RaycastHit2D hit = Physics2D.Raycast(transform.position, direction, collisionCheckDistance);
+
+        if (hit.collider != null && hit.collider is BoxCollider2D)
+        {
+            if (Time.time - lastDirectionChangeTime > directionChangeDelay)
+            {
+                ChangeDirection();
+            }
+        }
+
+        // Player interaction
         RaycastHit2D leftHit = Physics2D.Raycast(left_Collision.position, Vector2.left, 0.1f, playerLayer);
         RaycastHit2D rightHit = Physics2D.Raycast(right_Collision.position, Vector2.right, 0.1f, playerLayer);
         Collider2D topHit = Physics2D.OverlapCircle(top_Collision.position, 0.2f, playerLayer);
@@ -64,7 +78,6 @@ public class SnailScript : MonoBehaviour
                     anim.Play("Stunned");
                     stunned = true;
 
-                    // BEETLE CODE HERE
                     if (tag == MyTags.BEETLE_TAG)
                     {
                         anim.Play("Stunned");
@@ -80,7 +93,6 @@ public class SnailScript : MonoBehaviour
             {
                 if (!stunned)
                 {
-                    // APPLY DAMAGE TO PLAYER
                     leftHit.collider.gameObject.GetComponent<PlayerDamage>().DealDamage();
                 }
                 else
@@ -100,7 +112,6 @@ public class SnailScript : MonoBehaviour
             {
                 if (!stunned)
                 {
-                    // APPLY DAMAGE TO PLAYER
                     rightHit.collider.gameObject.GetComponent<PlayerDamage>().DealDamage();
                 }
                 else
@@ -113,31 +124,15 @@ public class SnailScript : MonoBehaviour
                 }
             }
         }
-
-        // IF we don't detect collision any more do whats in {}
-        if (!Physics2D.Raycast(down_Collision.position, Vector2.down, 0.1f))
-        {
-            ChangeDirection();
-        }
     }
 
     void ChangeDirection()
     {
         moveLeft = !moveLeft;
-        Vector3 tempScale = transform.localScale;
-        if (moveLeft)
-        {
-            tempScale.x = Mathf.Abs(tempScale.x);
-            left_Collision.position = left_Collision_Pos;
-            right_Collision.position = right_Collision_Pos;
-        }
-        else
-        {
-            tempScale.x = -Mathf.Abs(tempScale.x);
-            left_Collision.position = right_Collision_Pos;
-            right_Collision.position = left_Collision_Pos;
-        }
-        transform.localScale = tempScale;
+        Vector3 newScale = transform.localScale;
+        newScale.x *= -1;
+        transform.localScale = newScale;
+        lastDirectionChangeTime = Time.time;
     }
 
     IEnumerator Dead(float timer)
@@ -181,5 +176,4 @@ public class SnailScript : MonoBehaviour
             collision.gameObject.GetComponent<PlayerDamage>().DealDamage();
         }
     }
-
-} // class
+}
