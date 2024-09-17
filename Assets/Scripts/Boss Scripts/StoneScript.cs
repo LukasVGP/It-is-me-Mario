@@ -1,56 +1,24 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 
-public class StoneScript : MonoBehaviour {
+public class Stone : MonoBehaviour
+{
+    public int damage = 10;
 
-	void Start () {
-		Invoke ("Deactivate", 4f);
-	}
+    private void OnTriggerEnter2D(Collider2D collision)
+    {
+        if (collision.CompareTag("Player"))
+        {
+            PlayerDamage playerDamage = collision.GetComponent<PlayerDamage>();
+            if (playerDamage != null)
+            {
+                playerDamage.TakeDamage(damage);
+            }
+            Destroy(gameObject);
+        }
+    }
 
-	void Deactivate() {
-		gameObject.SetActive (false);
-	}
-	
-	void OnTriggerEnter2D(Collider2D target) {
-		if (target.tag == MyTags.PLAYER_TAG) {
-
-			target.GetComponent<PlayerDamage> ().DealDamage ();
-
-			gameObject.SetActive (false);
-		}	
-	}
-
-} // class
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    private void Start()
+    {
+        Destroy(gameObject, 5f); // Destroy the stone after 5 seconds if it doesn't hit anything
+    }
+}
