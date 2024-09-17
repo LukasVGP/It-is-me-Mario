@@ -1,20 +1,15 @@
-﻿using System.Collections;
+﻿using UnityEngine;
+using System.Collections;
 using System.Collections.Generic;
-using UnityEngine;
+
 
 public class BossWeapon : MonoBehaviour
 {
-    public int attackDamage = 20;
-    public int enragedAttackDamage = 40;
-
+    public int attackDamage = 100;
+    public int enragedAttackDamage = 200;
     public Vector3 attackOffset;
     public float attackRange = 1f;
     public LayerMask attackMask;
-
-    void Start()
-    {
-        this.enabled = false;
-    }
 
     public void Attack()
     {
@@ -25,7 +20,11 @@ public class BossWeapon : MonoBehaviour
         Collider2D colInfo = Physics2D.OverlapCircle(pos, attackRange, attackMask);
         if (colInfo != null)
         {
-            colInfo.GetComponent<PlayerDamage>().TakeDamage(attackDamage);
+            PlayerDamage playerDamage = colInfo.GetComponent<PlayerDamage>();
+            if (playerDamage != null)
+            {
+                playerDamage.TakeDamage(attackDamage);
+            }
         }
     }
 
@@ -38,7 +37,11 @@ public class BossWeapon : MonoBehaviour
         Collider2D colInfo = Physics2D.OverlapCircle(pos, attackRange, attackMask);
         if (colInfo != null)
         {
-            colInfo.GetComponent<PlayerDamage>().TakeDamage(enragedAttackDamage);
+            PlayerDamage playerDamage = colInfo.GetComponent<PlayerDamage>();
+            if (playerDamage != null)
+            {
+                playerDamage.TakeDamage(enragedAttackDamage);
+            }
         }
     }
 
@@ -47,7 +50,7 @@ public class BossWeapon : MonoBehaviour
         Vector3 pos = transform.position;
         pos += transform.right * attackOffset.x;
         pos += transform.up * attackOffset.y;
-
         Gizmos.DrawWireSphere(pos, attackRange);
     }
 }
+

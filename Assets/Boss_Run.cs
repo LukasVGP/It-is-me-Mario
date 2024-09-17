@@ -12,7 +12,7 @@ public class Boss_Run : StateMachineBehaviour
     override public void OnStateUpdate(Animator animator, AnimatorStateInfo stateInfo, int layerIndex)
     {
         boss.LookAtPlayer();
-        boss.ChasePlayer();
+        
     }
 
     override public void OnStateExit(Animator animator, AnimatorStateInfo stateInfo, int layerIndex)
