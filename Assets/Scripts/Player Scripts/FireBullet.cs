@@ -53,28 +53,38 @@ public class FireBullet : MonoBehaviour
         gameObject.SetActive(false);
     }
 
+
     void OnTriggerEnter2D(Collider2D target)
     {
         if (target.gameObject.tag == MyTags.BEETLE_TAG || target.gameObject.tag == MyTags.SNAIL_TAG
-            || target.gameObject.tag == MyTags.SPIDER_TAG || target.gameObject.tag == MyTags.BOSS_TAG)
+            || target.gameObject.tag == MyTags.SPIDER_TAG || target.gameObject.tag == "GruzMother" || target.gameObject.tag == MyTags.BOSS_TAG)
         {
             anim.Play("Explode");
             canMove = false;
 
-            // Deal damage to the boss
-            if (target.gameObject.tag == MyTags.BOSS_TAG)
+            if (target.gameObject.tag == "GruzMother")
             {
-                Boss boss = target.GetComponent<Boss>();
-                if (boss != null)
+                GruzMother gruzMother = target.GetComponent<GruzMother>();
+                if (gruzMother != null)
                 {
-                    boss.TakeDamage(10); // Adjust the damage value as needed
+                    gruzMother.TakeDamage(10); // Adjust the damage value as needed
+                }
+                else if (target.gameObject.tag == MyTags.BOSS_TAG)
+                {
+                    // Deal damage to the boss
+                    BossHealth bossHealth = target.GetComponent<BossHealth>();
+                    if (bossHealth != null)
+                    {
+                        bossHealth.TakeDamage(10); // Adjust the damage value as needed
+                    }
+
+                    StartCoroutine(DisableBullet(0.1f));
                 }
             }
-
-            StartCoroutine(DisableBullet(0.1f));
         }
     }
 }
+
 
 
 

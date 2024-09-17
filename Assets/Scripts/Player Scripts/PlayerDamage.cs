@@ -63,7 +63,8 @@ public class PlayerDamage : MonoBehaviour
         {
             currentHealth -= damage;
             UpdateLifeText();
-            UpdateHealthText(); // Update health text when damage is taken
+            UpdateHealthText();
+
             if (currentHealth > 0)
             {
                 RepelPlayer();
@@ -73,8 +74,21 @@ public class PlayerDamage : MonoBehaviour
             {
                 Die();
             }
+
             canDamage = false;
             StartCoroutine(WaitForDamage());
+        }
+    }
+
+    private void OnCollisionEnter2D(Collision2D collision)
+    {
+        if (collision.gameObject.CompareTag("GruzMother"))
+        {
+            GruzMother gruzMother = collision.gameObject.GetComponent<GruzMother>();
+            if (gruzMother != null)
+            {
+                TakeDamage(gruzMother.damageAmount);
+            }
         }
     }
 

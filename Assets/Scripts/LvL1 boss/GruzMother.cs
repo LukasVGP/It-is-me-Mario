@@ -28,13 +28,18 @@ public class GruzMother : MonoBehaviour
     private bool isTouchingWall;
     private bool hasPlayerPositon;
 
+    [Header("Health and Damage")]
+    public int maxHealth = 100;
+    private int currentHealth;
+    public int damageAmount = 20;
+
     private Vector2 playerPosition;
 
     private bool facingLeft = true;
     private bool goingUp = true;
     private Rigidbody2D enemyRB;
     private Animator enemyAnim;
-
+    private bool isActive = false;
 
     void Start()
     {
@@ -42,14 +47,24 @@ public class GruzMother : MonoBehaviour
         attackMovementDirection.Normalize();
         enemyRB = GetComponent<Rigidbody2D>();
         enemyAnim = GetComponent<Animator>();
+        currentHealth = maxHealth;
+        gameObject.SetActive(false);
     }
 
     // Update is called once per frame
     void Update()
     {
+        if (!isActive) return;
         isTouchingUp = Physics2D.OverlapCircle(goundCheckUp.position, groundCheckRadius, groundLayer); 
         isTouchingDown = Physics2D.OverlapCircle(goundCheckDown.position, groundCheckRadius, groundLayer); 
         isTouchingWall = Physics2D.OverlapCircle(goundCheckWall.position, groundCheckRadius, groundLayer);
+    }
+
+    public void ActivateBoss()
+    {
+        isActive = true;
+        gameObject.SetActive(true);
+       
     }
 
     void RandomStatePicker()
@@ -67,6 +82,7 @@ public class GruzMother : MonoBehaviour
 
    public void IdelState()
     {
+        if (!isActive) return;
         if (isTouchingUp && goingUp)
         {
             ChangeDirection();
@@ -91,6 +107,7 @@ public class GruzMother : MonoBehaviour
     } 
    public void AttackUpNDownState()
     {
+        if (!isActive) return;
         if (isTouchingUp && goingUp)
         {
             ChangeDirection();
@@ -114,9 +131,24 @@ public class GruzMother : MonoBehaviour
         enemyRB.velocity = attackMovementSpeed * attackMovementDirection;
     }
 
+    public void TakeDamage(int damage)
+    {
+        currentHealth -= damage;
+        if (currentHealth <= 0)
+        {
+            Die();
+        }
+    }
+
+    private void Die()
+    {
+        
+        Destroy(gameObject);
+    }
+
     public void AttackPlayerState()
     {
-       
+        if (!isActive) return;
         if (!hasPlayerPositon)
         {
             FlipTowardsPlayer();
@@ -167,6 +199,18 @@ public class GruzMother : MonoBehaviour
         idelMovementDirection.x *= -1;
         attackMovementDirection.x *= -1;
         transform.Rotate(0, 180, 0);
+    }
+
+    private void OnCollisionEnter2D(Collision2D collision)
+    {
+        if (collision.gameObject.CompareTag("Player"))
+        {
+            PlayerDamage playerDamage = collision.gameObject.GetComponent<PlayerDamage>();
+            if (playerDamage != null)
+            {
+                playerDamage.TakeDamage(damageAmount);
+            }
+        }
     }
 
     private void OnDrawGizmosSelected()
