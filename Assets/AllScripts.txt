@@ -1,0 +1,2342 @@
+// File: D:\Work\School\LaSalle\Unity\It is me, Mario\Assets\Scripts\Obstacles.cs
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class Obstacles : MonoBehaviour
+{
+    [SerializeField] private float pushForce = 10f;
+    [SerializeField] private float upwardForce = 5f;
+
+    void OnTriggerEnter2D(Collider2D col)
+    {
+        if (col.CompareTag("Player"))
+        {
+            // Deal damage
+            PlayerDamage playerDamage = col.GetComponent<PlayerDamage>();
+            if (playerDamage != null)
+            {
+                playerDamage.DealDamage();
+            }
+
+            // Push player
+            Rigidbody2D playerRb = col.GetComponent<Rigidbody2D>();
+            if (playerRb != null)
+            {
+                // Calculate direction away from the obstacle
+                Vector2 pushDirection = (col.transform.position - transform.position).normalized;
+
+                // Apply horizontal force (push back)
+                playerRb.AddForce(pushDirection * pushForce, ForceMode2D.Impulse);
+
+                // Apply upward force
+                playerRb.AddForce(Vector2.up * upwardForce, ForceMode2D.Impulse);
+            }
+        }
+    }
+}
+
+
+
+// File: D:\Work\School\LaSalle\Unity\It is me, Mario\Assets\Scripts\BG Scripts\ScaleBackground.cs
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class ScaleBackground : MonoBehaviour {
+
+	void Start () {
+		SpriteRenderer sr = GetComponent<SpriteRenderer> ();	
+
+		transform.localScale = new Vector3 (1, 1, 1);
+
+		float width = sr.sprite.bounds.size.x;
+		float height = sr.sprite.bounds.size.y;
+
+		float worldHeight = Camera.main.orthographicSize * 2f;
+		float worldWidth = worldHeight / Screen.height * Screen.width;
+
+		Vector3 tempScale = transform.localScale;
+		tempScale.x = worldWidth / width + 0.1f;
+		tempScale.y = worldHeight / height + 0.1f;
+
+		transform.localScale = tempScale;
+
+	}
+	
+
+} // class
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// File: D:\Work\School\LaSalle\Unity\It is me, Mario\Assets\Scripts\Boss Scripts\Boss.cs
+using UnityEngine;
+using System.Collections;
+
+public class Boss : MonoBehaviour
+{
+    public Transform player;
+    private BossHealth bossHealth;
+    public bool isFlipped = false;
+    public GameObject stonePrefab;
+    public float throwInterval = 2f;
+    public float throwForce = 10f;
+    public Transform throwPoint;
+
+    private void Start()
+    {
+        if (player == null)
+        {
+            player = GameObject.FindGameObjectWithTag("Player").transform;
+        }
+        bossHealth = GetComponent<BossHealth>();
+        StartCoroutine(ThrowStonesRoutine());
+    }
+
+    public void LookAtPlayer()
+    {
+        Vector3 flipped = transform.localScale;
+        flipped.z *= -1f;
+        if (transform.position.x > player.position.x && isFlipped)
+        {
+            transform.localScale = flipped;
+            transform.Rotate(0f, 180f, 0f);
+            isFlipped = false;
+        }
+        else if (transform.position.x < player.position.x && !isFlipped)
+        {
+            transform.localScale = flipped;
+            transform.Rotate(0f, 180f, 0f);
+            isFlipped = true;
+        }
+    }
+
+    private IEnumerator ThrowStonesRoutine()
+    {
+        while (true)
+        {
+            yield return new WaitForSeconds(throwInterval);
+            ThrowStone();
+        }
+    }
+
+    private void ThrowStone()
+    {
+        GameObject stone = Instantiate(stonePrefab, throwPoint.position, Quaternion.identity);
+        Rigidbody2D rb = stone.GetComponent<Rigidbody2D>();
+        Vector2 direction = (player.position - throwPoint.position).normalized;
+        rb.AddForce(direction * throwForce, ForceMode2D.Impulse);
+    }
+}
+
+
+// File: D:\Work\School\LaSalle\Unity\It is me, Mario\Assets\Scripts\Boss Scripts\BossHealth.cs
+using UnityEngine;
+
+public class BossHealth : MonoBehaviour
+{
+    public int maxHealth = 100;
+    private int currentHealth;
+    public GameObject deathEffect;
+    public bool isInvulnerable = false;
+    private Animator anim;
+
+    void Start()
+    {
+        anim = GetComponent<Animator>();
+        currentHealth = maxHealth;
+    }
+
+    public void TakeDamage(int damage)
+    {
+        if (isInvulnerable)
+            return;
+
+        currentHealth -= damage;
+
+        if (currentHealth <= maxHealth / 2)
+        {
+            EnterEnragedState();
+        }
+
+        if (currentHealth <= 0)
+        {
+            Die();
+        }
+    }
+
+    private void EnterEnragedState()
+    {
+        anim.SetBool("IsEnraged", true);
+    }
+
+    void Die()
+    {
+        Instantiate(deathEffect, transform.position, Quaternion.identity);
+        GameManager.Instance.isBossDefeated = true;
+        Destroy(gameObject);
+    }
+
+    void OnTriggerEnter2D(Collider2D other)
+    {
+        if (other.CompareTag(MyTags.BULLET_TAG))
+        {
+            FireBullet bullet = other.GetComponent<FireBullet>();
+            if (bullet != null)
+            {
+                TakeDamage(10);
+                bullet.gameObject.SetActive(false);
+            }
+        }
+    }
+}
+
+
+// File: D:\Work\School\LaSalle\Unity\It is me, Mario\Assets\Scripts\Boss Scripts\BossWeapon.cs
+using UnityEngine;
+
+public class BossWeapon : MonoBehaviour
+{
+    public int contactDamage = 50;
+    public int stoneDamage = 10;
+    public Vector3 attackOffset;
+    public float attackRange = 1f;
+    public LayerMask attackMask;
+
+    public void Attack()
+    {
+        Vector3 pos = transform.position;
+        pos += transform.right * attackOffset.x;
+        pos += transform.up * attackOffset.y;
+
+        Collider2D colInfo = Physics2D.OverlapCircle(pos, attackRange, attackMask);
+        if (colInfo != null)
+        {
+            PlayerDamage playerDamage = colInfo.GetComponent<PlayerDamage>();
+            if (playerDamage != null)
+            {
+                playerDamage.TakeDamage(contactDamage);
+            }
+        }
+    }
+
+    void OnDrawGizmosSelected()
+    {
+        Vector3 pos = transform.position;
+        pos += transform.right * attackOffset.x;
+        pos += transform.up * attackOffset.y;
+        Gizmos.DrawWireSphere(pos, attackRange);
+    }
+}
+
+
+// File: D:\Work\School\LaSalle\Unity\It is me, Mario\Assets\Scripts\Boss Scripts\Bullet.cs
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class Bullet : MonoBehaviour
+{
+    public float bulletLife = 1f;  // Defines how long before the bullet is destroyed
+    public float rotation = 0f;
+    public float speed = 1f;
+    public int bulletDamage = 10; // Set the damage value for the bullet
+
+    private Vector2 spawnPoint;
+    private float timer = 0f;
+
+    // Start is called before the first frame update
+    void Start()
+    {
+        spawnPoint = new Vector2(transform.position.x, transform.position.y);
+    }
+
+    // Update is called once per frame
+    void Update()
+    {
+        if (timer > bulletLife) Destroy(this.gameObject);
+        timer += Time.deltaTime;
+        transform.position = Movement(timer);
+    }
+
+    private Vector2 Movement(float timer)
+    {
+        // Moves right according to the bullet's rotation
+        float x = timer * speed * transform.right.x;
+        float y = timer * speed * transform.right.y;
+        return new Vector2(x + spawnPoint.x, y + spawnPoint.y);
+    }
+
+    void OnTriggerEnter2D(Collider2D target)
+    {
+        if (target.tag == "Player")
+        {
+            target.GetComponent<PlayerDamage>().TakeDamage(bulletDamage);
+            Destroy(this.gameObject); // Destroy the bullet after it hits the player
+        }
+    }
+}
+
+
+// File: D:\Work\School\LaSalle\Unity\It is me, Mario\Assets\Scripts\Boss Scripts\BulletSpawner.cs
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class BulletSpawner : MonoBehaviour
+{
+   enum SpawnerType { Straight,Spin};
+    [Header("Bullet attributes")]
+    public GameObject bullet;
+    public float speed=1f;
+    public float bulletLife = 1f;
+
+    [Header("Spawner attributes")]
+    [SerializeField] private SpawnerType spawnerType;
+    [SerializeField] private float firingRate = 1f;
+
+    private GameObject spawnedBullet;
+    private float timer=0f;
+
+     void Start()
+    {
+        
+    }
+
+    void Update()
+    {
+       timer+=Time.deltaTime;
+        if (spawnerType == SpawnerType.Spin) transform.eulerAngles = new Vector3(0f, 0f, transform.eulerAngles.z + 1f);
+        if (timer >= firingRate)
+        {
+            Fire();
+            timer = 0;
+        }
+
+    }
+
+    private void Fire()
+    {
+        if (bullet)
+        {
+            spawnedBullet = Instantiate(bullet, transform.position, Quaternion.identity);
+            spawnedBullet.GetComponent<Bullet>().speed=speed;
+            spawnedBullet.GetComponent<Bullet>().bulletLife=bulletLife;
+            spawnedBullet.transform.rotation = transform.rotation;
+        }
+    }
+}
+
+
+// File: D:\Work\School\LaSalle\Unity\It is me, Mario\Assets\Scripts\Boss Scripts\StoneScript.cs
+using UnityEngine;
+
+public class Stone : MonoBehaviour
+{
+    public int damage = 10;
+
+    private void OnTriggerEnter2D(Collider2D collision)
+    {
+        if (collision.CompareTag("Player"))
+        {
+            PlayerDamage playerDamage = collision.GetComponent<PlayerDamage>();
+            if (playerDamage != null)
+            {
+                playerDamage.TakeDamage(damage);
+            }
+            Destroy(gameObject);
+        }
+    }
+
+    private void Start()
+    {
+        Destroy(gameObject, 5f); // Destroy the stone after 5 seconds if it doesn't hit anything
+    }
+}
+
+
+// File: D:\Work\School\LaSalle\Unity\It is me, Mario\Assets\Scripts\Camera Scripts\CameraFollow.cs
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class CameraFollow : MonoBehaviour
+{
+
+    public float resetSpeed = 0.5f;
+    public float cameraSpeed = 0.3f;
+
+    public Bounds cameraBounds;
+
+    private Transform target;
+
+    private float offsetZ;
+    private Vector3 lastTargetPosition;
+    private Vector3 currentVelocity;
+
+    private bool followsPlayer;
+
+    void Awake()
+    {
+        BoxCollider2D myCol = GetComponent<BoxCollider2D>();
+        myCol.size = new Vector2(Camera.main.aspect * 2f * Camera.main.orthographicSize, 15f);
+        cameraBounds = myCol.bounds;
+    }
+
+    void Start()
+    {
+        target = GameObject.FindGameObjectWithTag(MyTags.PLAYER_TAG).transform;
+        lastTargetPosition = target.position;
+        offsetZ = (transform.position - target.position).z;
+        followsPlayer = true;
+    }
+
+    // Update is called once per frame
+    void FixedUpdate()
+    {
+        if (followsPlayer)
+        {
+            Vector3 aheadTargetPos = target.position + Vector3.forward * offsetZ;
+
+            Vector3 newCameraPosition = Vector3.SmoothDamp(transform.position, aheadTargetPos,
+                ref currentVelocity, cameraSpeed);
+
+            transform.position = new Vector3(newCameraPosition.x, transform.position.y,
+                newCameraPosition.z);
+
+            lastTargetPosition = target.position;
+        }
+    }
+} // class
+
+
+// File: D:\Work\School\LaSalle\Unity\It is me, Mario\Assets\Scripts\Collectable Scripts\BonusBlock.cs
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class BonusBlock : MonoBehaviour {
+
+	public Transform bottom_Collision;
+
+	private Animator anim;
+
+	public LayerMask playerLayer;
+
+	private Vector3 moveDirection = Vector3.up;
+	private Vector3 originPosition;
+	private Vector3 animPosition;
+	private bool startAnim;
+	private bool canAnimate = true;
+
+	void Awake() {
+		anim = GetComponent<Animator> ();
+	}
+
+	void Start () {
+		originPosition = transform.position;
+		animPosition = transform.position;
+		animPosition.y += 0.15f;
+	}
+	
+	// Update is called once per frame
+	void Update () {
+		CheckForCollision ();
+		AnimateUpDown ();
+	}
+
+	void CheckForCollision() {
+		if (canAnimate) {
+			RaycastHit2D hit = Physics2D.Raycast (bottom_Collision.position, Vector2.down, 0.1f, playerLayer);
+
+			if (hit) {
+				if (hit.collider.gameObject.tag == MyTags.PLAYER_TAG) {
+					// increase score
+					anim.Play("BlockIdle");
+					startAnim = true;
+					canAnimate = false;
+				}
+			}
+		}
+	}
+
+	void AnimateUpDown() {
+		if (startAnim) {
+			transform.Translate (moveDirection * Time.smoothDeltaTime);
+
+			if (transform.position.y >= animPosition.y) {
+				moveDirection = Vector3.down;
+
+			} else if (transform.position.y <= originPosition.y) {
+				startAnim = false;
+			}
+		}
+	}
+
+} // class
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// File: D:\Work\School\LaSalle\Unity\It is me, Mario\Assets\Scripts\Enemy Scripts\BirdScript.cs
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class BirdScript : MonoBehaviour
+{
+
+    private Rigidbody2D myBody;
+    private Animator anim;
+
+    private Vector3 moveDirection = Vector3.left;
+    private Vector3 originPosition;
+    private Vector3 movePosition;
+
+    public GameObject birdEgg;
+    public LayerMask playerLayer;
+    private bool attacked;
+
+    private bool canMove;
+
+    private float speed = 2.5f;
+
+    void Awake()
+    {
+        myBody = GetComponent<Rigidbody2D>();
+        anim = GetComponent<Animator>();
+    }
+
+    void Start()
+    {
+        originPosition = transform.position;
+        originPosition.x += 6f;
+
+        movePosition = transform.position;
+        movePosition.x -= 6f;
+
+        canMove = true;
+
+    }
+
+    // Update is called once per frame
+    void Update()
+    {
+        MoveTheBird();
+        DropTheEgg();
+    }
+
+    void MoveTheBird()
+    {
+        if (canMove)
+        {
+            transform.Translate(moveDirection * speed * Time.smoothDeltaTime);
+
+            if (transform.position.x >= originPosition.x)
+            {
+                moveDirection = Vector3.left;
+
+                ChangeDirection(0.5f);
+
+            }
+            else if (transform.position.x <= movePosition.x)
+            {
+                moveDirection = Vector3.right;
+
+                ChangeDirection(-0.5f);
+
+            }
+
+        }
+    }
+
+    void ChangeDirection(float direction)
+    {
+        Vector3 tempScale = transform.localScale;
+        tempScale.x = direction;
+        transform.localScale = tempScale;
+    }
+
+    void DropTheEgg()
+    {
+        if (!attacked)
+        {
+            if (Physics2D.Raycast(transform.position, Vector2.down, Mathf.Infinity, playerLayer))
+            {
+                Instantiate(birdEgg, new Vector3(transform.position.x,
+                    transform.position.y - 1f, transform.position.z), Quaternion.identity);
+                attacked = true;
+                anim.Play("BirdFly");
+            }
+        }
+    }
+
+    IEnumerator BirdDead()
+    {
+        yield return new WaitForSeconds(3f);
+        gameObject.SetActive(false);
+    }
+
+    void OnTriggerEnter2D(Collider2D target)
+    {
+        if (target.tag == MyTags.BULLET_TAG)
+        {
+            anim.Play("BirdDead");
+
+            GetComponent<BoxCollider2D>().isTrigger = true;
+            myBody.bodyType = RigidbodyType2D.Dynamic;
+
+            canMove = false;
+
+            StartCoroutine(BirdDead());
+
+        }
+    }
+
+} // class
+
+
+// File: D:\Work\School\LaSalle\Unity\It is me, Mario\Assets\Scripts\Enemy Scripts\EggScript.cs
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class EggScript : MonoBehaviour {
+
+	void OnCollisionEnter2D(Collision2D target) {
+		if (target.gameObject.tag == MyTags.PLAYER_TAG) {
+			// DAMAGE THE PLAYER
+			target.gameObject.GetComponent<PlayerDamage>().DealDamage();
+		}
+		gameObject.SetActive (false);
+	}
+
+}
+
+
+// File: D:\Work\School\LaSalle\Unity\It is me, Mario\Assets\Scripts\Enemy Scripts\EnemyDamage.cs
+using UnityEngine;
+
+public class EnemyDamage : MonoBehaviour
+{
+    public float pushBackForce = 5f;
+
+    private void OnCollisionEnter2D(Collision2D collision)
+    {
+        if (collision.gameObject.CompareTag("Player"))
+        {
+            PlayerDamage playerDamage = collision.gameObject.GetComponent<PlayerDamage>();
+            if (playerDamage != null)
+            {
+                playerDamage.DealDamage();
+                PushBackPlayer(collision.transform);
+            }
+        }
+    }
+
+    private void PushBackPlayer(Transform player)
+    {
+        Vector2 pushDirection = (player.position - transform.position).normalized;
+        Rigidbody2D playerRb = player.GetComponent<Rigidbody2D>();
+        if (playerRb != null)
+        {
+            playerRb.AddForce(pushDirection * pushBackForce, ForceMode2D.Impulse);
+        }
+    }
+}
+
+
+// File: D:\Work\School\LaSalle\Unity\It is me, Mario\Assets\Scripts\Enemy Scripts\FrogScript.cs
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class FrogScript : MonoBehaviour
+{
+
+    private Animator anim;
+
+    private bool animation_Started;
+    private bool animation_Finished;
+
+    private int jumpedTimes;
+    private bool jumpLeft = true;
+
+    private string coroutine_Name = "FrogJump";
+
+    public LayerMask playerLayer;
+
+    private GameObject player;
+
+    private bool stunned;
+
+    void Awake()
+    {
+        anim = GetComponent<Animator>();
+    }
+
+    void Start()
+    {
+        StartCoroutine(coroutine_Name);
+        player = GameObject.FindGameObjectWithTag(MyTags.PLAYER_TAG);
+    }
+
+    void Update()
+    {
+        if (Physics2D.OverlapCircle(transform.position, 0.5f, playerLayer))
+        {
+            if (!stunned)
+            {
+                player.GetComponent<PlayerDamage>().DealDamage();
+            }
+        }
+    }
+
+    void LateUpdate()
+    {
+        if (animation_Finished && animation_Started)
+        {
+            animation_Started = false;
+
+            transform.parent.position = transform.position;
+            transform.localPosition = Vector3.zero;
+        }
+    }
+
+    IEnumerator FrogJump()
+    {
+        yield return new WaitForSeconds(Random.Range(1f, 4f));
+
+        animation_Started = true;
+        animation_Finished = false;
+
+        jumpedTimes++;
+
+        if (jumpLeft)
+        {
+            anim.Play("FrogJumpLeft");
+        }
+        else
+        {
+            anim.Play("FrogJumpRight");
+        }
+
+        StartCoroutine(coroutine_Name);
+
+    }
+
+    void AnimationFinished()
+    {
+
+        animation_Finished = true;
+
+        if (jumpLeft)
+        {
+            anim.Play("FrogIdleLeft");
+        }
+        else
+        {
+            anim.Play("FrogIdleRight");
+        }
+
+        if (jumpedTimes == 3)
+        {
+            jumpedTimes = 0;
+
+            Vector3 tempScale = transform.localScale;
+            tempScale.x *= -1;
+            transform.localScale = tempScale;
+
+            jumpLeft = !jumpLeft;
+        }
+    }
+
+    void OnTriggerEnter2D(Collider2D target)
+    {
+        if (target.tag == MyTags.BULLET_TAG)
+        {
+            if (!stunned)
+            {
+                anim.Play("Stunned");
+                stunned = true;
+                StartCoroutine(Dead(0.4f));
+            }
+            else
+            {
+                gameObject.SetActive(false);
+            }
+        }
+    }
+
+    IEnumerator Dead(float timer)
+    {
+        yield return new WaitForSeconds(timer);
+        gameObject.SetActive(false);
+    }
+
+} // class
+
+
+// File: D:\Work\School\LaSalle\Unity\It is me, Mario\Assets\Scripts\Enemy Scripts\SnailScript.cs
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class SnailScript : MonoBehaviour
+{
+
+    public float moveSpeed = 1f;
+    private Rigidbody2D myBody;
+    private Animator anim;
+    public LayerMask playerLayer;
+    private bool moveLeft;
+    private bool canMove;
+    private bool stunned;
+    public Transform left_Collision, right_Collision, top_Collision, down_Collision;
+    private Vector3 left_Collision_Pos, right_Collision_Pos;
+
+    void Awake()
+    {
+        myBody = GetComponent<Rigidbody2D>();
+        anim = GetComponent<Animator>();
+        left_Collision_Pos = left_Collision.position;
+        right_Collision_Pos = right_Collision.position;
+    }
+
+    void Start()
+    {
+        moveLeft = true;
+        canMove = true;
+    }
+
+    void Update()
+    {
+        if (canMove)
+        {
+            if (moveLeft)
+            {
+                myBody.velocity = new Vector2(-moveSpeed, myBody.velocity.y);
+            }
+            else
+            {
+                myBody.velocity = new Vector2(moveSpeed, myBody.velocity.y);
+            }
+        }
+        CheckCollision();
+    }
+
+    void CheckCollision()
+    {
+        RaycastHit2D leftHit = Physics2D.Raycast(left_Collision.position, Vector2.left, 0.1f, playerLayer);
+        RaycastHit2D rightHit = Physics2D.Raycast(right_Collision.position, Vector2.right, 0.1f, playerLayer);
+        Collider2D topHit = Physics2D.OverlapCircle(top_Collision.position, 0.2f, playerLayer);
+
+        if (topHit != null)
+        {
+            if (topHit.gameObject.tag == MyTags.PLAYER_TAG)
+            {
+                if (!stunned)
+                {
+                    topHit.gameObject.GetComponent<Rigidbody2D>().velocity =
+                        new Vector2(topHit.gameObject.GetComponent<Rigidbody2D>().velocity.x, 7f);
+                    canMove = false;
+                    myBody.velocity = new Vector2(0, 0);
+                    anim.Play("Stunned");
+                    stunned = true;
+
+                    // BEETLE CODE HERE
+                    if (tag == MyTags.BEETLE_TAG)
+                    {
+                        anim.Play("Stunned");
+                        StartCoroutine(Dead(0.5f));
+                    }
+                }
+            }
+        }
+
+        if (leftHit)
+        {
+            if (leftHit.collider.gameObject.tag == MyTags.PLAYER_TAG)
+            {
+                if (!stunned)
+                {
+                    // APPLY DAMAGE TO PLAYER
+                    leftHit.collider.gameObject.GetComponent<PlayerDamage>().DealDamage();
+                }
+                else
+                {
+                    if (tag != MyTags.BEETLE_TAG)
+                    {
+                        myBody.velocity = new Vector2(15f, myBody.velocity.y);
+                        StartCoroutine(Dead(3f));
+                    }
+                }
+            }
+        }
+
+        if (rightHit)
+        {
+            if (rightHit.collider.gameObject.tag == MyTags.PLAYER_TAG)
+            {
+                if (!stunned)
+                {
+                    // APPLY DAMAGE TO PLAYER
+                    rightHit.collider.gameObject.GetComponent<PlayerDamage>().DealDamage();
+                }
+                else
+                {
+                    if (tag != MyTags.BEETLE_TAG)
+                    {
+                        myBody.velocity = new Vector2(-15f, myBody.velocity.y);
+                        StartCoroutine(Dead(3f));
+                    }
+                }
+            }
+        }
+
+        // IF we don't detect collision any more do whats in {}
+        if (!Physics2D.Raycast(down_Collision.position, Vector2.down, 0.1f))
+        {
+            ChangeDirection();
+        }
+    }
+
+    void ChangeDirection()
+    {
+        moveLeft = !moveLeft;
+        Vector3 tempScale = transform.localScale;
+        if (moveLeft)
+        {
+            tempScale.x = Mathf.Abs(tempScale.x);
+            left_Collision.position = left_Collision_Pos;
+            right_Collision.position = right_Collision_Pos;
+        }
+        else
+        {
+            tempScale.x = -Mathf.Abs(tempScale.x);
+            left_Collision.position = right_Collision_Pos;
+            right_Collision.position = left_Collision_Pos;
+        }
+        transform.localScale = tempScale;
+    }
+
+    IEnumerator Dead(float timer)
+    {
+        yield return new WaitForSeconds(timer);
+        gameObject.SetActive(false);
+    }
+
+    void OnTriggerEnter2D(Collider2D target)
+    {
+        if (target.tag == MyTags.BULLET_TAG)
+        {
+            if (tag == MyTags.BEETLE_TAG)
+            {
+                anim.Play("Stunned");
+                canMove = false;
+                myBody.velocity = new Vector2(0, 0);
+                StartCoroutine(Dead(0.4f));
+            }
+            if (tag == MyTags.SNAIL_TAG)
+            {
+                if (!stunned)
+                {
+                    anim.Play("Stunned");
+                    stunned = true;
+                    canMove = false;
+                    myBody.velocity = new Vector2(0, 0);
+                }
+                else
+                {
+                    gameObject.SetActive(false);
+                }
+            }
+        }
+    }
+
+    void OnCollisionEnter2D(Collision2D collision)
+    {
+        if (collision.gameObject.tag == MyTags.PLAYER_TAG && !stunned)
+        {
+            collision.gameObject.GetComponent<PlayerDamage>().DealDamage();
+        }
+    }
+
+} // class
+
+
+// File: D:\Work\School\LaSalle\Unity\It is me, Mario\Assets\Scripts\Enemy Scripts\SpiderScript.cs
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class SpiderScript : MonoBehaviour {
+
+	private Animator anim;
+	private Rigidbody2D myBody;
+
+	private Vector3 moveDirection = Vector3.down;
+
+	private string coroutine_Name = "ChangeMovement";
+
+	void Awake() {
+		anim = GetComponent<Animator> ();
+		myBody = GetComponent<Rigidbody2D> ();
+	}
+
+	void Start () {
+		StartCoroutine (coroutine_Name);
+	}
+	
+	// Update is called once per frame
+	void Update () {
+		MoveSpider ();
+	}
+
+	void MoveSpider() {
+		transform.Translate (moveDirection * Time.smoothDeltaTime);
+	}
+
+	IEnumerator ChangeMovement() {
+		yield return new WaitForSeconds (Random.Range (2f, 5f));
+
+		if (moveDirection == Vector3.down) {
+			moveDirection = Vector3.up;
+		} else {
+			moveDirection = Vector3.down;
+		}
+
+		StartCoroutine (coroutine_Name);
+	}
+
+	IEnumerator SpiderDead() {
+		yield return new WaitForSeconds (3f);
+		gameObject.SetActive (false);
+	}
+
+	void OnTriggerEnter2D(Collider2D target) {
+		if (target.tag == MyTags.BULLET_TAG) {
+			anim.Play ("SpiderDead");
+
+			myBody.bodyType = RigidbodyType2D.Dynamic;
+
+			StartCoroutine (SpiderDead ());
+			StopCoroutine (coroutine_Name);
+
+		}
+
+		if (target.tag == MyTags.PLAYER_TAG) {
+			target.GetComponent<PlayerDamage> ().DealDamage ();
+		}
+	}
+
+} // class
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// File: D:\Work\School\LaSalle\Unity\It is me, Mario\Assets\Scripts\Enemy Scripts\SpikeScript.cs
+using UnityEngine;
+
+public class SpikeScript : MonoBehaviour
+{
+    public int damage = 10;
+    public float repelForce = 5f;
+
+    private void OnCollisionEnter2D(Collision2D collision)
+    {
+        if (collision.gameObject.CompareTag("Player"))
+        {
+            PlayerDamage playerDamage = collision.gameObject.GetComponent<PlayerDamage>();
+            if (playerDamage != null)
+            {
+                playerDamage.TakeDamage(damage);
+                RepelPlayer(collision.transform);
+            }
+        }
+    }
+
+    private void RepelPlayer(Transform player)
+    {
+        Vector2 repelDirection = (player.position - transform.position).normalized;
+        player.GetComponent<Rigidbody2D>().AddForce(repelDirection * repelForce, ForceMode2D.Impulse);
+    }
+}
+
+
+// File: D:\Work\School\LaSalle\Unity\It is me, Mario\Assets\Scripts\Enemy Scripts\TESTER.cs
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class TESTER : MonoBehaviour {
+
+	private Rigidbody2D myBody;
+
+	void Start () {
+		myBody = GetComponent<Rigidbody2D> ();
+	}
+
+	public void DamageAndPush(float force) {
+		myBody.AddForce (new Vector2 (force, Mathf.Abs(force)));
+	}
+
+}
+
+
+// File: D:\Work\School\LaSalle\Unity\It is me, Mario\Assets\Scripts\GameManager\GameManager.cs
+using UnityEngine;
+using UnityEngine.UI;
+using UnityEngine.SceneManagement;
+using System.Collections;
+
+public class GameManager : MonoBehaviour
+{
+    public static GameManager Instance;
+
+    public bool isBossDefeated = false;
+    public bool isGameOver = false;
+    public GameObject winScreen;
+    public GameObject gameOverScreen;
+    public AudioClip winSound;
+    public AudioClip gameOverSound;
+    public string mainMenuSceneName = "MainMenu";
+    public string gameOverSceneName = "GameOverScene";
+    public float delayBeforeGameOverScene = 2f;
+
+    private AudioSource audioSource;
+
+    void Awake()
+    {
+        if (Instance == null)
+        {
+            Instance = this;
+            DontDestroyOnLoad(gameObject);
+        }
+        else if (Instance != this)
+        {
+            Destroy(gameObject);
+        }
+
+        audioSource = GetComponent<AudioSource>();
+        if (audioSource == null)
+        {
+            audioSource = gameObject.AddComponent<AudioSource>();
+        }
+    }
+
+    public void GameOver()
+    {
+        if (!isGameOver)
+        {
+            isGameOver = true;
+            PlaySound(gameOverSound);
+            StartCoroutine(GameOverSequence());
+        }
+    }
+
+    private IEnumerator GameOverSequence()
+    {
+        Time.timeScale = 0f;
+        yield return new WaitForSecondsRealtime(delayBeforeGameOverScene);
+        Time.timeScale = 1f;
+        SceneManager.LoadScene(gameOverSceneName);
+    }
+
+    public void WinGame()
+    {
+        if (!isGameOver)
+        {
+            isGameOver = true;
+            if (winScreen != null) winScreen.SetActive(true);
+            PlaySound(winSound);
+            Time.timeScale = 0f;
+        }
+    }
+
+    void PlaySound(AudioClip clip)
+    {
+        if (audioSource != null && clip != null)
+        {
+            audioSource.clip = clip;
+            audioSource.Play();
+        }
+    }
+
+    public void RestartGame()
+    {
+        Time.timeScale = 1f;
+        isGameOver = false;
+        isBossDefeated = false;
+        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+    }
+
+    public void ReturnToMainMenu()
+    {
+        Time.timeScale = 1f;
+        isGameOver = false;
+        isBossDefeated = false;
+        SceneManager.LoadScene(mainMenuSceneName);
+    }
+
+    public void QuitGame()
+    {
+        Application.Quit();
+    }
+}
+
+
+// File: D:\Work\School\LaSalle\Unity\It is me, Mario\Assets\Scripts\GameManager\GameOverManager.cs
+using UnityEngine;
+using UnityEngine.SceneManagement;
+using UnityEngine.UI;
+using System.Collections;
+
+public class GameOverManager : MonoBehaviour
+{
+    public float displayDuration = 5f;
+    public string mainMenuSceneName = "MainMenu";
+    public Button returnToMenuButton;
+
+    void Start()
+    {
+        Debug.Log("GameOverManager: Start method called");
+        if (returnToMenuButton != null)
+        {
+            returnToMenuButton.onClick.AddListener(ReturnToMainMenu);
+        }
+        else
+        {
+            Debug.LogError("Return to Menu button not assigned!");
+        }
+    }
+
+    void ReturnToMainMenu()
+    {
+        Debug.Log("GameOverManager: Attempting to load main menu scene: " + mainMenuSceneName);
+        SceneManager.LoadScene(mainMenuSceneName);
+    }
+}
+
+
+// File: D:\Work\School\LaSalle\Unity\It is me, Mario\Assets\Scripts\GameManager\MainMenuController.cs
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.SceneManagement;
+
+public class MainMenuController : MonoBehaviour {
+
+	public void PlayGame() {
+		SceneManager.LoadScene ("Level 1");
+	}
+
+}
+
+
+// File: D:\Work\School\LaSalle\Unity\It is me, Mario\Assets\Scripts\GameManager\WinManager.cs
+using UnityEngine;
+using UnityEngine.UI;
+
+public class WinManager : MonoBehaviour
+{
+    public Button returnToMenuButton;
+
+    private void Start()
+    {
+        returnToMenuButton.onClick.AddListener(ReturnToMainMenu);
+    }
+
+    private void ReturnToMainMenu()
+    {
+        GameManager.Instance.ReturnToMainMenu();
+    }
+}
+
+
+// File: D:\Work\School\LaSalle\Unity\It is me, Mario\Assets\Scripts\Helper Scripts\MyTags.cs
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class MyTags : MonoBehaviour {
+
+	public static string PLAYER_TAG = "Player";
+	public static string BULLET_TAG = "Bullet";
+	public static string COIN_TAG = "Coin";
+
+	public static string BEETLE_TAG = "Beetle";
+	public static string SNAIL_TAG = "Snail";
+	public static string SPIDER_TAG = "Spider";
+	public static string BOSS_TAG = "Boss";
+
+}
+
+
+// File: D:\Work\School\LaSalle\Unity\It is me, Mario\Assets\Scripts\LvL1 boss\GruzMother.cs
+using System.Collections;
+using System.Collections.Generic;
+using System.Net.NetworkInformation;
+using UnityEngine;
+
+public class GruzMother : MonoBehaviour
+{
+    [Header("Idel")]
+    [SerializeField] float idelMovementSpeed;
+    [SerializeField] Vector2 idelMovementDirection;
+
+    [Header("AttackUpNDown")]
+    [SerializeField] float attackMovementSpeed;
+    [SerializeField] Vector2 attackMovementDirection;
+
+    [Header("AttackPlayer")]
+    [SerializeField] float attackPlayerSpeed;
+    [SerializeField] Transform player;
+
+    [Header("Other")]
+    [SerializeField] Transform goundCheckUp;
+    [SerializeField] Transform goundCheckDown;
+    [SerializeField] Transform goundCheckWall;
+    [SerializeField] float groundCheckRadius;
+    [SerializeField] LayerMask groundLayer;
+
+    [Header("Combat")]
+    [SerializeField] int damageAmount = 10;
+    [SerializeField] float damageInterval = 0.5f;
+    private float lastDamageTime;
+    [SerializeField] float pushForce = 10f;
+
+    [Header("Activation")]
+    [SerializeField] private bool isActivated = false;
+    [SerializeField] private Vector3 initialPosition;
+
+
+
+
+
+    private bool isTouchingUp;
+    private bool isTouchingDown;
+    private bool isTouchingWall;
+    private bool hasPlayerPositon;
+
+    private Vector2 playerPosition;
+
+    private bool facingLeft = true;
+    private bool goingUp = true;
+    private Rigidbody2D enemyRB;
+    private Animator enemyAnim;
+
+
+    void Start()
+    {
+        idelMovementDirection.Normalize();
+        attackMovementDirection.Normalize();
+        enemyRB = GetComponent<Rigidbody2D>();
+        enemyAnim = GetComponent<Animator>();
+
+        initialPosition = transform.position;
+        if (!isActivated)
+        {
+            DisableBoss();
+        }
+    }
+
+    // Update is called once per frame
+    void Update()
+    {
+        if (!isActivated) return;
+
+        isTouchingUp = Physics2D.OverlapCircle(goundCheckUp.position, groundCheckRadius, groundLayer);
+        isTouchingDown = Physics2D.OverlapCircle(goundCheckDown.position, groundCheckRadius, groundLayer);
+        isTouchingWall = Physics2D.OverlapCircle(goundCheckWall.position, groundCheckRadius, groundLayer);
+    }
+
+    public void ActivateBoss()
+    {
+        isActivated = true;
+        EnableBoss();
+    }
+
+    private void DisableBoss()
+    {
+        enemyRB.simulated = false;
+        enemyAnim.enabled = false;
+        this.enabled = false;
+    }
+
+    private void EnableBoss()
+    {
+        enemyRB.simulated = true;
+        enemyAnim.enabled = true;
+        this.enabled = true;
+        transform.position = initialPosition;
+    }
+
+    void RandomStatePicker()
+    {
+        int randomState = Random.Range(0, 2);
+        if (randomState == 0)
+        {
+            enemyAnim.SetTrigger("AttackUpNDown");
+        }
+        else if (randomState == 1)
+        {
+            enemyAnim.SetTrigger("AttackPlayer");
+        }
+    }
+
+    private void OnCollisionStay2D(Collision2D collision)
+    {
+        if (!isActivated) return;
+
+        if (collision.gameObject.CompareTag("Player"))
+        {
+            // Push the player
+            Rigidbody2D playerRb = collision.gameObject.GetComponent<Rigidbody2D>();
+            if (playerRb != null)
+            {
+                Vector2 pushDirection = (collision.transform.position - transform.position).normalized;
+                playerRb.AddForce(pushDirection * pushForce, ForceMode2D.Impulse);
+            }
+
+            // Deal damage
+            if (Time.time - lastDamageTime >= damageInterval)
+            {
+                PlayerDamage playerDamage = collision.gameObject.GetComponent<PlayerDamage>();
+                if (playerDamage != null)
+                {
+                    playerDamage.TakeDamage(damageAmount);
+                    lastDamageTime = Time.time;
+                }
+            }
+        }
+    }
+
+    public void IdelState()
+    {
+        if (!isActivated) return;
+
+        if (isTouchingUp && goingUp)
+        {
+            ChangeDirection();
+        }
+        else if (isTouchingDown && !goingUp)
+        {
+            ChangeDirection();
+        }
+
+        if (isTouchingWall)
+        {
+            if (facingLeft)
+            {
+                Flip();
+            }
+            else if (!facingLeft)
+            {
+                Flip();
+            }
+        }
+        enemyRB.velocity = idelMovementSpeed * idelMovementDirection;
+    }
+    public void AttackUpNDownState()
+    {
+        if (!isActivated) return;
+
+        if (isTouchingUp && goingUp)
+        {
+            ChangeDirection();
+        }
+        else if (isTouchingDown && !goingUp)
+        {
+            ChangeDirection();
+        }
+
+        if (isTouchingWall)
+        {
+            if (facingLeft)
+            {
+                Flip();
+            }
+            else if (!facingLeft)
+            {
+                Flip();
+            }
+        }
+        enemyRB.velocity = attackMovementSpeed * attackMovementDirection;
+    }
+
+    public void AttackPlayerState()
+    {
+        if (!isActivated) return;
+
+        if (!hasPlayerPositon)
+        {
+            FlipTowardsPlayer();
+            playerPosition = player.position - transform.position;
+            playerPosition.Normalize();
+            hasPlayerPositon = true;
+        }
+        if (hasPlayerPositon)
+        {
+            enemyRB.velocity = attackPlayerSpeed * playerPosition;
+
+        }
+
+
+        if (isTouchingWall || isTouchingDown)
+        {
+            //play Slam animation
+            enemyAnim.SetTrigger("Slamed");
+            enemyRB.velocity = Vector2.zero;
+            hasPlayerPositon = false;
+        }
+    }
+
+    void FlipTowardsPlayer()
+    {
+        float playerDirection = player.position.x - transform.position.x;
+
+        if (playerDirection > 0 && facingLeft)
+        {
+            Flip();
+        }
+        else if (playerDirection < 0 && !facingLeft)
+        {
+            Flip();
+        }
+    }
+
+    void ChangeDirection()
+    {
+        goingUp = !goingUp;
+        idelMovementDirection.y *= -1;
+        attackMovementDirection.y *= -1;
+    }
+
+    void Flip()
+    {
+        facingLeft = !facingLeft;
+        idelMovementDirection.x *= -1;
+        attackMovementDirection.x *= -1;
+        transform.Rotate(0, 180, 0);
+    }
+
+    private void OnDrawGizmosSelected()
+    {
+        Gizmos.color = Color.cyan;
+        Gizmos.DrawWireSphere(goundCheckUp.position, groundCheckRadius);
+        Gizmos.DrawWireSphere(goundCheckDown.position, groundCheckRadius);
+        Gizmos.DrawWireSphere(goundCheckWall.position, groundCheckRadius);
+    }
+}
+
+
+// File: D:\Work\School\LaSalle\Unity\It is me, Mario\Assets\Scripts\LvL1 boss\GruzMother_AttackPlayer.cs
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class GruzMother_AttackPlayer : StateMachineBehaviour
+{
+    [SerializeField] GruzMother gruzMother;
+    // OnStateEnter is called when a transition starts and the state machine starts to evaluate this state
+    override public void OnStateEnter(Animator animator, AnimatorStateInfo stateInfo, int layerIndex)
+    {
+        gruzMother = GameObject.FindGameObjectWithTag("GruzMother").GetComponent<GruzMother>();
+    }
+
+    // OnStateUpdate is called on each Update frame between OnStateEnter and OnStateExit callbacks
+    override public void OnStateUpdate(Animator animator, AnimatorStateInfo stateInfo, int layerIndex)
+    {
+        gruzMother.AttackPlayerState();
+    }
+}
+
+
+// File: D:\Work\School\LaSalle\Unity\It is me, Mario\Assets\Scripts\LvL1 boss\GruzMother_AttackUpNDown.cs
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class GruzMother_AttackUpNDown : StateMachineBehaviour
+{
+    [SerializeField] GruzMother gruzMother;
+    // OnStateEnter is called when a transition starts and the state machine starts to evaluate this state
+    override public void OnStateEnter(Animator animator, AnimatorStateInfo stateInfo, int layerIndex)
+    {
+        gruzMother = GameObject.FindGameObjectWithTag("GruzMother").GetComponent<GruzMother>();
+    }
+
+    // OnStateUpdate is called on each Update frame between OnStateEnter and OnStateExit callbacks
+    override public void OnStateUpdate(Animator animator, AnimatorStateInfo stateInfo, int layerIndex)
+    {
+        gruzMother.AttackUpNDownState();
+    }
+}
+
+
+// File: D:\Work\School\LaSalle\Unity\It is me, Mario\Assets\Scripts\LvL1 boss\GruzMother_Idel.cs
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class GruzMother_Idel : StateMachineBehaviour
+{
+    [SerializeField] GruzMother gruzMother;
+    // OnStateEnter is called when a transition starts and the state machine starts to evaluate this state
+    override public void OnStateEnter(Animator animator, AnimatorStateInfo stateInfo, int layerIndex)
+    {
+        gruzMother = GameObject.FindGameObjectWithTag("GruzMother").GetComponent<GruzMother>();
+    }
+
+    // OnStateUpdate is called on each Update frame between OnStateEnter and OnStateExit callbacks
+    override public void OnStateUpdate(Animator animator, AnimatorStateInfo stateInfo, int layerIndex)
+    {
+        gruzMother.IdelState();
+    }
+
+    
+}
+
+
+// File: D:\Work\School\LaSalle\Unity\It is me, Mario\Assets\Scripts\LvL1 boss\PlayerMove.cs
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class PlayerMove : MonoBehaviour
+{
+    [SerializeField] float movementSpeed;
+    [SerializeField] Rigidbody2D rb;
+ 
+
+    // Update is called once per frame
+    void FixedUpdate()
+    {
+        Movement(Input.GetAxisRaw("Horizontal"));
+    }
+    void Movement(float direction)
+    {
+        rb.velocity = new Vector2(direction * movementSpeed, rb.velocity.y);
+    }
+}
+
+
+// File: D:\Work\School\LaSalle\Unity\It is me, Mario\Assets\Scripts\Player Scripts\FireBullet.cs
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class FireBullet : MonoBehaviour
+{
+    private float speed = 10f;
+    private Animator anim;
+    private bool canMove;
+
+    void Awake()
+    {
+        anim = GetComponent<Animator>();
+    }
+
+    void Start()
+    {
+        canMove = true;
+        StartCoroutine(DisableBullet(5f));
+    }
+
+    void Update()
+    {
+        Move();
+    }
+
+    void Move()
+    {
+        if (canMove)
+        {
+            Vector3 temp = transform.position;
+            temp.x += speed * Time.deltaTime;
+            transform.position = temp;
+        }
+    }
+
+    public float Speed
+    {
+        get { return speed; }
+        set { speed = value; }
+    }
+
+    IEnumerator DisableBullet(float timer)
+    {
+        yield return new WaitForSeconds(timer);
+        gameObject.SetActive(false);
+    }
+
+    void OnTriggerEnter2D(Collider2D target)
+    {
+        if (target.gameObject.tag == MyTags.BEETLE_TAG || target.gameObject.tag == MyTags.SNAIL_TAG
+            || target.gameObject.tag == MyTags.SPIDER_TAG || target.gameObject.tag == MyTags.BOSS_TAG
+            || target.gameObject.tag == "GruzMother")
+        {
+            anim.Play("Explode");
+            canMove = false;
+
+            // Deal damage to the boss, GruzMother, or Turret
+            if (target.gameObject.tag == MyTags.BOSS_TAG)
+            {
+                BossHealth bossHealth = target.GetComponent<BossHealth>();
+                if (bossHealth != null)
+                {
+                    bossHealth.TakeDamage(10); // Adjust damage as needed
+                }
+            }
+            else if (target.gameObject.tag == "GruzMother")
+            {
+                GruzMotherHealth gruzMotherHealth = target.GetComponent<GruzMotherHealth>();
+                if (gruzMotherHealth != null)
+                {
+                    gruzMotherHealth.TakeDamage(10); // Adjust damage as needed
+                }
+            }
+         
+
+            StartCoroutine(DisableBullet(0.1f));
+        }
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// File: D:\Work\School\LaSalle\Unity\It is me, Mario\Assets\Scripts\Player Scripts\Kill_zone.cs
+using UnityEngine;
+
+public class KillZone : MonoBehaviour
+{
+    void OnTriggerEnter2D(Collider2D other)
+    {
+        if (other.CompareTag("Player"))
+        {
+            PlayerDamage playerDamage = other.GetComponent<PlayerDamage>();
+            if (playerDamage != null)
+            {
+                playerDamage.KillZoneDeath();
+            }
+            else
+            {
+                Debug.LogError("PlayerDamage component not found on the player.");
+            }
+        }
+    }
+}
+
+
+// File: D:\Work\School\LaSalle\Unity\It is me, Mario\Assets\Scripts\Player Scripts\PlayerDamage.cs
+using UnityEngine;
+using UnityEngine.UI;
+using System.Collections;
+
+public class PlayerDamage : MonoBehaviour
+{
+    private Text lifeText;
+    private Text healthText;
+    public int lifeScoreCount;
+    private bool canDamage;
+    public Transform respawnPoint;
+    private Rigidbody2D rb;
+    private Animator anim;
+    public float repelForce = 5f;
+    private bool isDead = false;
+    private SpriteRenderer spriteRenderer;
+    public int maxHealth = 100;
+    private int currentHealth;
+
+    void Awake()
+    {
+        lifeText = GameObject.Find("LifeText").GetComponent<Text>();
+        healthText = GameObject.Find("HealthText").GetComponent<Text>();
+        lifeScoreCount = 3;
+        UpdateLifeText();
+        canDamage = true;
+        rb = GetComponent<Rigidbody2D>();
+        anim = GetComponent<Animator>();
+        spriteRenderer = GetComponent<SpriteRenderer>();
+        currentHealth = maxHealth;
+        UpdateHealthText(); // Add this line to update health text immediately
+    }
+
+    void Start()
+    {
+        Time.timeScale = 1f;
+    }
+
+    public void DealDamage()
+    {
+        if (canDamage && !isDead)
+        {
+            currentHealth -= 35;
+            UpdateLifeText();
+            UpdateHealthText(); // Update health text when damage is taken
+            if (currentHealth > 0)
+            {
+                RepelPlayer();
+                StartCoroutine(BlinkEffect());
+            }
+            else
+            {
+                Die();
+            }
+            canDamage = false;
+            StartCoroutine(WaitForDamage());
+        }
+    }
+
+    public void TakeDamage(int damage)
+    {
+        if (canDamage && !isDead)
+        {
+            currentHealth -= damage;
+            UpdateLifeText();
+            UpdateHealthText(); // Update health text when damage is taken
+            if (currentHealth > 0)
+            {
+                RepelPlayer();
+                StartCoroutine(BlinkEffect());
+            }
+            else
+            {
+                Die();
+            }
+            canDamage = false;
+            StartCoroutine(WaitForDamage());
+        }
+    }
+
+    private void RepelPlayer()
+    {
+        Vector2 repelDirection = transform.right * (transform.localScale.x > 0 ? -1 : 1);
+        rb.velocity = Vector2.zero;
+        rb.AddForce(repelDirection * repelForce, ForceMode2D.Impulse);
+    }
+
+    private void Die()
+    {
+        isDead = true;
+        rb.velocity = Vector2.zero;
+        gameObject.SetActive(false);
+        Respawn();
+    }
+
+    private void UpdateLifeText()
+    {
+        lifeText.text = "x" + Mathf.Max(lifeScoreCount, 0);
+    }
+
+    private void UpdateHealthText()
+    {
+        healthText.text = "HP: " + currentHealth;
+    }
+
+    public void Respawn()
+    {
+        lifeScoreCount--;
+        if (lifeScoreCount < 0)
+        {
+            GameManager.Instance.GameOver();
+        }
+        else
+        {
+            isDead = false;
+            transform.position = respawnPoint.position;
+            gameObject.SetActive(true);
+            currentHealth = maxHealth;
+            UpdateLifeText();
+            UpdateHealthText(); // Update health text when respawning
+        }
+    }
+
+    IEnumerator WaitForDamage()
+    {
+        yield return new WaitForSeconds(2f);
+        canDamage = true;
+    }
+
+    IEnumerator BlinkEffect()
+    {
+        for (int i = 0; i < 10; i++)
+        {
+            spriteRenderer.enabled = !spriteRenderer.enabled;
+            yield return new WaitForSeconds(0.1f);
+        }
+        spriteRenderer.enabled = true;
+    }
+
+    public void KillZoneDeath()
+    {
+        Die();
+    }
+}
+
+
+// File: D:\Work\School\LaSalle\Unity\It is me, Mario\Assets\Scripts\Player Scripts\PlayerMovement.cs
+using UnityEngine;
+
+public class PlayerMovement : MonoBehaviour
+{
+    public float speed = 5f;
+    public float jumpPower = 12f;
+    public LayerMask groundLayer;
+    public float groundCheckRadius = 0.2f;
+
+    private Rigidbody2D myBody;
+    private Animator anim;
+    private bool isGrounded = false;
+    private Transform groundCheck;
+
+    void Awake()
+    {
+        myBody = GetComponent<Rigidbody2D>();
+        anim = GetComponent<Animator>();
+
+        // Create and position the ground check object
+        groundCheck = new GameObject("GroundCheck").transform;
+        groundCheck.SetParent(transform);
+        groundCheck.localPosition = new Vector3(0, -0.5f, 0); // Adjust this value based on your character's size
+    }
+
+    void Update()
+    {
+        CheckGrounded();
+        HandleJump();
+    }
+
+    void FixedUpdate()
+    {
+        PlayerWalk();
+    }
+
+    void PlayerWalk()
+    {
+        float h = Input.GetAxisRaw("Horizontal");
+        if (h > 0)
+        {
+            myBody.velocity = new Vector2(speed, myBody.velocity.y);
+            ChangeDirection(1);
+        }
+        else if (h < 0)
+        {
+            myBody.velocity = new Vector2(-speed, myBody.velocity.y);
+            ChangeDirection(-1);
+        }
+        else
+        {
+            myBody.velocity = new Vector2(0f, myBody.velocity.y);
+        }
+
+        anim.SetInteger("Speed", Mathf.Abs((int)myBody.velocity.x));
+    }
+
+    void ChangeDirection(int direction)
+    {
+        Vector3 tempScale = transform.localScale;
+        tempScale.x = direction;
+        transform.localScale = tempScale;
+    }
+
+    void HandleJump()
+    {
+        if (Input.GetButtonDown("Jump") && isGrounded)
+        {
+            myBody.velocity = new Vector2(myBody.velocity.x, jumpPower);
+            anim.SetBool("Jump", true);
+            isGrounded = false;
+        }
+    }
+
+    void CheckGrounded()
+    {
+        isGrounded = Physics2D.OverlapCircle(groundCheck.position, groundCheckRadius, groundLayer);
+
+        if (isGrounded)
+        {
+            anim.SetBool("Jump", false);
+        }
+    }
+
+    void OnDrawGizmosSelected()
+    {
+        if (groundCheck != null)
+        {
+            Gizmos.color = Color.red;
+            Gizmos.DrawWireSphere(groundCheck.position, groundCheckRadius);
+        }
+    }
+}
+
+
+// File: D:\Work\School\LaSalle\Unity\It is me, Mario\Assets\Scripts\Player Scripts\PlayerShoot.cs
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class PlayerShoot : MonoBehaviour {
+
+	public GameObject fireBullet;
+
+	void Update() {
+		ShootBullet ();
+	}
+
+	void ShootBullet() {
+		if (Input.GetKeyDown (KeyCode.J)) {
+			GameObject bullet = Instantiate (fireBullet, transform.position, Quaternion.identity);
+			bullet.GetComponent<FireBullet> ().Speed *= transform.localScale.x;
+		}
+	}
+
+
+
+} // class
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// File: D:\Work\School\LaSalle\Unity\It is me, Mario\Assets\Scripts\Player Scripts\Player_Level_transition.cs
+using UnityEngine;
+using UnityEngine.SceneManagement;
+
+public class Player_Level_transition : MonoBehaviour
+{
+    public string nextLevelName; // Set this in the Inspector to the name of the next scene
+
+    private void OnTriggerEnter2D(Collider2D other)
+    {
+        if (other.CompareTag("LevelEnd"))
+        {
+            if (GameManager.Instance != null)
+            {
+                if (SceneManager.GetActiveScene().name == "FinalLevel") // Adjust this to your final level's name
+                {
+                    GameManager.Instance.WinGame();
+                }
+                else
+                {
+                    LoadNextLevel();
+                }
+            }
+            else
+            {
+                Debug.LogError("GameManager instance not found!");
+            }
+        }
+    }
+
+    private void LoadNextLevel()
+    {
+        if (!string.IsNullOrEmpty(nextLevelName))
+        {
+            SceneManager.LoadScene(nextLevelName);
+        }
+        else
+        {
+            Debug.LogWarning("Next level name not set!");
+        }
+    }
+}
+
+
+// File: D:\Work\School\LaSalle\Unity\It is me, Mario\Assets\Scripts\Player Scripts\Respawn_scribt.cs
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class PlayerRespawn : MonoBehaviour
+{
+    public Transform respawnPoint;
+
+    public void Respawn()
+    {
+        transform.position = respawnPoint.position;
+    }
+}
+
+
+// File: D:\Work\School\LaSalle\Unity\It is me, Mario\Assets\Scripts\Player Scripts\ScoreScript.cs
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.UI;
+
+public class ScoreScript : MonoBehaviour {
+
+	private Text coinTextScore;
+	private AudioSource audioManager;
+	private int scoreCount;
+
+	void Awake() {
+		audioManager = GetComponent<AudioSource> ();
+	}
+
+	void Start () {
+		coinTextScore = GameObject.Find ("CoinText").GetComponent<Text> ();
+	}
+
+	void OnTriggerEnter2D(Collider2D target) {
+		if (target.tag == MyTags.COIN_TAG) {
+			
+			target.gameObject.SetActive (false);
+			scoreCount++;
+
+			coinTextScore.text = "x" + scoreCount;
+
+			audioManager.Play ();
+		}
+	}
+
+} // class
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

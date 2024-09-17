@@ -15,6 +15,7 @@ public class GameManager : MonoBehaviour
     public AudioClip gameOverSound;
     public string mainMenuSceneName = "MainMenu";
     public string gameOverSceneName = "GameOverScene";
+    public string winSceneName = "WinScene";
     public float delayBeforeGameOverScene = 2f;
 
     private AudioSource audioSource;
@@ -61,10 +62,17 @@ public class GameManager : MonoBehaviour
         if (!isGameOver)
         {
             isGameOver = true;
-            if (winScreen != null) winScreen.SetActive(true);
             PlaySound(winSound);
-            Time.timeScale = 0f;
+            StartCoroutine(WinSequence());
         }
+    }
+
+    private IEnumerator WinSequence()
+    {
+        Time.timeScale = 0f;
+        yield return new WaitForSecondsRealtime(1f);
+        Time.timeScale = 1f;
+        SceneManager.LoadScene(winSceneName);
     }
 
     void PlaySound(AudioClip clip)
