@@ -15121,7 +15121,7 @@ PrefabInstance:
     - target: {fileID: 114855583041589088, guid: faaef2337c68447b79977529f4878950, type: 3}
       propertyPath: respawnPoint
       value: 
-      objectReference: {fileID: 0}
+      objectReference: {fileID: 294464628}
     - target: {fileID: 114855583041589088, guid: faaef2337c68447b79977529f4878950, type: 3}
       propertyPath: deathJumpForce
       value: 25

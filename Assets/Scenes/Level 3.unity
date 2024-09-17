@@ -5225,11 +5225,11 @@ Transform:
   m_GameObject: {fileID: 294464626}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -285.31998, y: -4.89, z: 1.132644}
+  m_LocalPosition: {x: -9.769989, y: -3.9599998, z: 1.132644}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 1302380392}
+  m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &301384117
 GameObject:
@@ -19095,11 +19095,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4038629572465822, guid: faaef2337c68447b79977529f4878950, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 272.7
+      value: -9.79
       objectReference: {fileID: 0}
     - target: {fileID: 4038629572465822, guid: faaef2337c68447b79977529f4878950, type: 3}
       propertyPath: m_LocalPosition.y
-      value: -3.1
+      value: -3.93
       objectReference: {fileID: 0}
     - target: {fileID: 4038629572465822, guid: faaef2337c68447b79977529f4878950, type: 3}
       propertyPath: m_LocalPosition.z
@@ -19168,7 +19168,7 @@ PrefabInstance:
     - target: {fileID: 114855583041589088, guid: faaef2337c68447b79977529f4878950, type: 3}
       propertyPath: respawnPoint
       value: 
-      objectReference: {fileID: 0}
+      objectReference: {fileID: 294464628}
     - target: {fileID: 114855583041589088, guid: faaef2337c68447b79977529f4878950, type: 3}
       propertyPath: deathJumpForce
       value: 25
@@ -19209,7 +19209,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e804e5e589b9a3a4d80c622b357d3ae8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  nextLevelName: Level 2
+  nextLevelName: 
 --- !u!114 &899942955
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -19222,7 +19222,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 70365877ae27c71499540737375a69df, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  respawnPoint: {fileID: 0}
+  respawnPoint: {fileID: 294464628}
 --- !u!1001 &905163732
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -28385,7 +28385,6 @@ Transform:
   - {fileID: 1446015632}
   - {fileID: 1818388884}
   - {fileID: 1338834137}
-  - {fileID: 294464628}
   - {fileID: 484933499}
   - {fileID: 245742439}
   - {fileID: 797728274}
@@ -44599,6 +44598,7 @@ SceneRoots:
   - {fileID: 1149828227}
   - {fileID: 97215870}
   - {fileID: 1711099440}
+  - {fileID: 294464628}
   - {fileID: 1302380392}
   - {fileID: 2019438897}
   - {fileID: 1344572989}

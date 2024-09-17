@@ -3,39 +3,78 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Obstacles : MonoBehaviour
+public class Obstacle : MonoBehaviour
 {
-    [SerializeField] private float pushForce = 10f;
-    [SerializeField] private float upwardForce = 5f;
+    public int damageAmount = 10;
+    public float pushForce = 10f;
+    public float upwardForce = 5f;
+    public bool continuousDamage = false;
+    public float damageInterval = 1f;
 
-    void OnTriggerEnter2D(Collider2D col)
+    private float lastDamageTime;
+
+    private void OnCollisionStay2D(Collision2D collision)
     {
-        if (col.CompareTag("Player"))
+        if (collision.gameObject.CompareTag("Player"))
         {
-            // Deal damage
-            PlayerDamage playerDamage = col.GetComponent<PlayerDamage>();
-            if (playerDamage != null)
+            PlayerDamage playerDamage = collision.gameObject.GetComponent<PlayerDamage>();
+            Rigidbody2D playerRb = collision.gameObject.GetComponent<Rigidbody2D>();
+
+            if (playerDamage != null && playerRb != null)
             {
-                playerDamage.DealDamage();
-            }
-
-            // Push player
-            Rigidbody2D playerRb = col.GetComponent<Rigidbody2D>();
-            if (playerRb != null)
-            {
-                // Calculate direction away from the obstacle
-                Vector2 pushDirection = (col.transform.position - transform.position).normalized;
-
-                // Apply horizontal force (push back)
-                playerRb.AddForce(pushDirection * pushForce, ForceMode2D.Impulse);
-
-                // Apply upward force
-                playerRb.AddForce(Vector2.up * upwardForce, ForceMode2D.Impulse);
+                if (continuousDamage)
+                {
+                    if (Time.time - lastDamageTime >= damageInterval)
+                    {
+                        ApplyDamageAndForce(playerDamage, playerRb, collision.GetContact(0).normal);
+                        lastDamageTime = Time.time;
+                    }
+                }
+                else
+                {
+                    ApplyDamageAndForce(playerDamage, playerRb, collision.GetContact(0).normal);
+                }
             }
         }
     }
-}
 
+    private void OnTriggerStay2D(Collider2D collision)
+    {
+        if (collision.CompareTag("Player"))
+        {
+            PlayerDamage playerDamage = collision.GetComponent<PlayerDamage>();
+            Rigidbody2D playerRb = collision.GetComponent<Rigidbody2D>();
+
+            if (playerDamage != null && playerRb != null)
+            {
+                if (continuousDamage)
+                {
+                    if (Time.time - lastDamageTime >= damageInterval)
+                    {
+                        Vector2 direction = (collision.transform.position - transform.position).normalized;
+                        ApplyDamageAndForce(playerDamage, playerRb, direction);
+                        lastDamageTime = Time.time;
+                    }
+                }
+                else
+                {
+                    Vector2 direction = (collision.transform.position - transform.position).normalized;
+                    ApplyDamageAndForce(playerDamage, playerRb, direction);
+                }
+            }
+        }
+    }
+
+    private void ApplyDamageAndForce(PlayerDamage playerDamage, Rigidbody2D playerRb, Vector2 direction)
+    {
+        playerDamage.TakeDamage(damageAmount);
+
+        Vector2 pushDirection = new Vector2(direction.x, 0).normalized;
+        Vector2 force = (pushDirection * pushForce) + (Vector2.up * upwardForce);
+        playerRb.velocity = Vector2.zero;
+        playerRb.AddForce(force, ForceMode2D.Impulse);
+    }
+}
 
 
 // File: D:\Work\School\LaSalle\Unity\It is me, Mario\Assets\Scripts\BG Scripts\ScaleBackground.cs
@@ -120,33 +159,29 @@ public class ScaleBackground : MonoBehaviour {
 
 
 // File: D:\Work\School\LaSalle\Unity\It is me, Mario\Assets\Scripts\Boss Scripts\Boss.cs
-using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
 
 public class Boss : MonoBehaviour
 {
     public Transform player;
-    private BossHealth bossHealth;
     public bool isFlipped = false;
-    public GameObject stonePrefab;
-    public float throwInterval = 2f;
-    public float throwForce = 10f;
-    public Transform throwPoint;
+    public float chaseSpeed = 3f;
+    public float chaseDistance = 5f;
 
-    private void Start()
+    private Rigidbody2D rb;
+
+    void Start()
     {
-        if (player == null)
-        {
-            player = GameObject.FindGameObjectWithTag("Player").transform;
-        }
-        bossHealth = GetComponent<BossHealth>();
-        StartCoroutine(ThrowStonesRoutine());
+        rb = GetComponent<Rigidbody2D>();
     }
 
     public void LookAtPlayer()
     {
         Vector3 flipped = transform.localScale;
         flipped.z *= -1f;
+
         if (transform.position.x > player.position.x && isFlipped)
         {
             transform.localScale = flipped;
@@ -161,40 +196,43 @@ public class Boss : MonoBehaviour
         }
     }
 
-    private IEnumerator ThrowStonesRoutine()
+    public void ChasePlayer()
     {
-        while (true)
+        if (player != null)
         {
-            yield return new WaitForSeconds(throwInterval);
-            ThrowStone();
-        }
-    }
+            float distanceToPlayer = Vector2.Distance(transform.position, player.position);
 
-    private void ThrowStone()
-    {
-        GameObject stone = Instantiate(stonePrefab, throwPoint.position, Quaternion.identity);
-        Rigidbody2D rb = stone.GetComponent<Rigidbody2D>();
-        Vector2 direction = (player.position - throwPoint.position).normalized;
-        rb.AddForce(direction * throwForce, ForceMode2D.Impulse);
+            if (distanceToPlayer <= chaseDistance)
+            {
+                Vector2 direction = (player.position - transform.position).normalized;
+                rb.velocity = direction * chaseSpeed;
+                LookAtPlayer();
+            }
+            else
+            {
+                rb.velocity = Vector2.zero;
+            }
+        }
     }
 }
 
 
 // File: D:\Work\School\LaSalle\Unity\It is me, Mario\Assets\Scripts\Boss Scripts\BossHealth.cs
+using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 
 public class BossHealth : MonoBehaviour
 {
-    public int maxHealth = 100;
-    private int currentHealth;
+    public int health = 500;
     public GameObject deathEffect;
     public bool isInvulnerable = false;
-    private Animator anim;
+
+    private Animator animator;
 
     void Start()
     {
-        anim = GetComponent<Animator>();
-        currentHealth = maxHealth;
+        animator = GetComponent<Animator>();
     }
 
     public void TakeDamage(int damage)
@@ -202,53 +240,68 @@ public class BossHealth : MonoBehaviour
         if (isInvulnerable)
             return;
 
-        currentHealth -= damage;
+        health -= damage;
+        Debug.Log("Boss took " + damage + " damage. Remaining health: " + health);
 
-        if (currentHealth <= maxHealth / 2)
+        if (animator != null)
         {
-            EnterEnragedState();
+            animator.SetTrigger("Hit");
         }
 
-        if (currentHealth <= 0)
+        if (health <= 200)
+        {
+            animator.SetBool("IsEnraged", true);
+        }
+
+        if (health <= 0)
         {
             Die();
         }
     }
 
-    private void EnterEnragedState()
-    {
-        anim.SetBool("IsEnraged", true);
-    }
-
     void Die()
     {
-        Instantiate(deathEffect, transform.position, Quaternion.identity);
-        GameManager.Instance.isBossDefeated = true;
-        Destroy(gameObject);
-    }
-
-    void OnTriggerEnter2D(Collider2D other)
-    {
-        if (other.CompareTag(MyTags.BULLET_TAG))
+        Debug.Log("Boss defeated!");
+        if (animator != null)
         {
-            FireBullet bullet = other.GetComponent<FireBullet>();
-            if (bullet != null)
-            {
-                TakeDamage(10);
-                bullet.gameObject.SetActive(false);
-            }
+            animator.SetTrigger("Die");
         }
+
+        // Disable the boss behavior
+        Boss bossBehavior = GetComponent<Boss>();
+        if (bossBehavior != null)
+        {
+            bossBehavior.enabled = false;
+        }
+
+        // Disable the collider
+        Collider2D col = GetComponent<Collider2D>();
+        if (col != null)
+        {
+            col.enabled = false;
+        }
+
+        if (deathEffect != null)
+        {
+            Instantiate(deathEffect, transform.position, Quaternion.identity);
+        }
+
+        // Delay destruction to allow for death animation
+        Destroy(gameObject, 2f);
     }
 }
 
 
+
 // File: D:\Work\School\LaSalle\Unity\It is me, Mario\Assets\Scripts\Boss Scripts\BossWeapon.cs
+using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 
 public class BossWeapon : MonoBehaviour
 {
-    public int contactDamage = 50;
-    public int stoneDamage = 10;
+    public int attackDamage = 20;
+    public int enragedAttackDamage = 40;
     public Vector3 attackOffset;
     public float attackRange = 1f;
     public LayerMask attackMask;
@@ -265,7 +318,24 @@ public class BossWeapon : MonoBehaviour
             PlayerDamage playerDamage = colInfo.GetComponent<PlayerDamage>();
             if (playerDamage != null)
             {
-                playerDamage.TakeDamage(contactDamage);
+                playerDamage.TakeDamage(attackDamage);
+            }
+        }
+    }
+
+    public void EnragedAttack()
+    {
+        Vector3 pos = transform.position;
+        pos += transform.right * attackOffset.x;
+        pos += transform.up * attackOffset.y;
+
+        Collider2D colInfo = Physics2D.OverlapCircle(pos, attackRange, attackMask);
+        if (colInfo != null)
+        {
+            PlayerDamage playerDamage = colInfo.GetComponent<PlayerDamage>();
+            if (playerDamage != null)
+            {
+                playerDamage.TakeDamage(enragedAttackDamage);
             }
         }
     }
@@ -275,9 +345,11 @@ public class BossWeapon : MonoBehaviour
         Vector3 pos = transform.position;
         pos += transform.right * attackOffset.x;
         pos += transform.up * attackOffset.y;
+
         Gizmos.DrawWireSphere(pos, attackRange);
     }
 }
+
 
 
 // File: D:\Work\School\LaSalle\Unity\It is me, Mario\Assets\Scripts\Boss Scripts\Bullet.cs
@@ -1225,6 +1297,7 @@ public class GameManager : MonoBehaviour
     public AudioClip gameOverSound;
     public string mainMenuSceneName = "MainMenu";
     public string gameOverSceneName = "GameOverScene";
+    public string winSceneName = "WinScene";
     public float delayBeforeGameOverScene = 2f;
 
     private AudioSource audioSource;
@@ -1271,10 +1344,17 @@ public class GameManager : MonoBehaviour
         if (!isGameOver)
         {
             isGameOver = true;
-            if (winScreen != null) winScreen.SetActive(true);
             PlaySound(winSound);
-            Time.timeScale = 0f;
+            StartCoroutine(WinSequence());
         }
+    }
+
+    private IEnumerator WinSequence()
+    {
+        Time.timeScale = 0f;
+        yield return new WaitForSecondsRealtime(1f);
+        Time.timeScale = 1f;
+        SceneManager.LoadScene(winSceneName);
     }
 
     void PlaySound(AudioClip clip)
@@ -1342,6 +1422,20 @@ public class GameOverManager : MonoBehaviour
 }
 
 
+// File: D:\Work\School\LaSalle\Unity\It is me, Mario\Assets\Scripts\GameManager\GoldenDoor.cs
+using UnityEngine;
+
+public class GoldenDoor : MonoBehaviour
+{
+    private void OnTriggerEnter2D(Collider2D collision)
+    {
+        if (collision.CompareTag("Player"))
+        {
+            GameManager.Instance.WinGame();
+        }
+    }
+}
+
 // File: D:\Work\School\LaSalle\Unity\It is me, Mario\Assets\Scripts\GameManager\MainMenuController.cs
 using System.Collections;
 using System.Collections.Generic;
@@ -1373,6 +1467,41 @@ public class WinManager : MonoBehaviour
     private void ReturnToMainMenu()
     {
         GameManager.Instance.ReturnToMainMenu();
+    }
+}
+
+
+// File: D:\Work\School\LaSalle\Unity\It is me, Mario\Assets\Scripts\GameManager\WinSceneManager.cs
+using UnityEngine;
+using UnityEngine.UI;
+using UnityEngine.SceneManagement;
+
+public class WinSceneManager : MonoBehaviour
+{
+    public Text scoreText;
+    public Button mainMenuButton;
+
+    void Start()
+    {
+        if (scoreText != null)
+        {
+            scoreText.text = "Score: " + PlayerPrefs.GetInt("Score", 0);
+        }
+
+        if (mainMenuButton != null)
+        {
+            mainMenuButton.onClick.AddListener(OnMainMenuButtonClick);
+        }
+    }
+
+    public void OnMainMenuButtonClick()
+    {
+        ReturnToMainMenu();
+    }
+
+    public void ReturnToMainMenu()
+    {
+        SceneManager.LoadScene(GameManager.Instance.mainMenuSceneName);
     }
 }
 
@@ -1422,25 +1551,15 @@ public class GruzMother : MonoBehaviour
     [SerializeField] Transform goundCheckWall;
     [SerializeField] float groundCheckRadius;
     [SerializeField] LayerMask groundLayer;
-
-    [Header("Combat")]
-    [SerializeField] int damageAmount = 10;
-    [SerializeField] float damageInterval = 0.5f;
-    private float lastDamageTime;
-    [SerializeField] float pushForce = 10f;
-
-    [Header("Activation")]
-    [SerializeField] private bool isActivated = false;
-    [SerializeField] private Vector3 initialPosition;
-
-
-
-
-
     private bool isTouchingUp;
     private bool isTouchingDown;
     private bool isTouchingWall;
     private bool hasPlayerPositon;
+
+    [Header("Health and Damage")]
+    public int maxHealth = 100;
+    private int currentHealth;
+    public int damageAmount = 20;
 
     private Vector2 playerPosition;
 
@@ -1448,7 +1567,7 @@ public class GruzMother : MonoBehaviour
     private bool goingUp = true;
     private Rigidbody2D enemyRB;
     private Animator enemyAnim;
-
+    private bool isActive = false;
 
     void Start()
     {
@@ -1456,43 +1575,24 @@ public class GruzMother : MonoBehaviour
         attackMovementDirection.Normalize();
         enemyRB = GetComponent<Rigidbody2D>();
         enemyAnim = GetComponent<Animator>();
-
-        initialPosition = transform.position;
-        if (!isActivated)
-        {
-            DisableBoss();
-        }
+        currentHealth = maxHealth;
+        gameObject.SetActive(false);
     }
 
     // Update is called once per frame
     void Update()
     {
-        if (!isActivated) return;
-
-        isTouchingUp = Physics2D.OverlapCircle(goundCheckUp.position, groundCheckRadius, groundLayer);
-        isTouchingDown = Physics2D.OverlapCircle(goundCheckDown.position, groundCheckRadius, groundLayer);
+        if (!isActive) return;
+        isTouchingUp = Physics2D.OverlapCircle(goundCheckUp.position, groundCheckRadius, groundLayer); 
+        isTouchingDown = Physics2D.OverlapCircle(goundCheckDown.position, groundCheckRadius, groundLayer); 
         isTouchingWall = Physics2D.OverlapCircle(goundCheckWall.position, groundCheckRadius, groundLayer);
     }
 
     public void ActivateBoss()
     {
-        isActivated = true;
-        EnableBoss();
-    }
-
-    private void DisableBoss()
-    {
-        enemyRB.simulated = false;
-        enemyAnim.enabled = false;
-        this.enabled = false;
-    }
-
-    private void EnableBoss()
-    {
-        enemyRB.simulated = true;
-        enemyAnim.enabled = true;
-        this.enabled = true;
-        transform.position = initialPosition;
+        isActive = true;
+        gameObject.SetActive(true);
+       
     }
 
     void RandomStatePicker()
@@ -1508,37 +1608,9 @@ public class GruzMother : MonoBehaviour
         }
     }
 
-    private void OnCollisionStay2D(Collision2D collision)
+   public void IdelState()
     {
-        if (!isActivated) return;
-
-        if (collision.gameObject.CompareTag("Player"))
-        {
-            // Push the player
-            Rigidbody2D playerRb = collision.gameObject.GetComponent<Rigidbody2D>();
-            if (playerRb != null)
-            {
-                Vector2 pushDirection = (collision.transform.position - transform.position).normalized;
-                playerRb.AddForce(pushDirection * pushForce, ForceMode2D.Impulse);
-            }
-
-            // Deal damage
-            if (Time.time - lastDamageTime >= damageInterval)
-            {
-                PlayerDamage playerDamage = collision.gameObject.GetComponent<PlayerDamage>();
-                if (playerDamage != null)
-                {
-                    playerDamage.TakeDamage(damageAmount);
-                    lastDamageTime = Time.time;
-                }
-            }
-        }
-    }
-
-    public void IdelState()
-    {
-        if (!isActivated) return;
-
+        if (!isActive) return;
         if (isTouchingUp && goingUp)
         {
             ChangeDirection();
@@ -1560,11 +1632,10 @@ public class GruzMother : MonoBehaviour
             }
         }
         enemyRB.velocity = idelMovementSpeed * idelMovementDirection;
-    }
-    public void AttackUpNDownState()
+    } 
+   public void AttackUpNDownState()
     {
-        if (!isActivated) return;
-
+        if (!isActive) return;
         if (isTouchingUp && goingUp)
         {
             ChangeDirection();
@@ -1588,23 +1659,37 @@ public class GruzMother : MonoBehaviour
         enemyRB.velocity = attackMovementSpeed * attackMovementDirection;
     }
 
+    public void TakeDamage(int damage)
+    {
+        currentHealth -= damage;
+        if (currentHealth <= 0)
+        {
+            Die();
+        }
+    }
+
+    private void Die()
+    {
+        
+        Destroy(gameObject);
+    }
+
     public void AttackPlayerState()
     {
-        if (!isActivated) return;
-
+        if (!isActive) return;
         if (!hasPlayerPositon)
         {
             FlipTowardsPlayer();
-            playerPosition = player.position - transform.position;
+             playerPosition = player.position - transform.position;
             playerPosition.Normalize();
             hasPlayerPositon = true;
         }
         if (hasPlayerPositon)
         {
             enemyRB.velocity = attackPlayerSpeed * playerPosition;
-
+           
         }
-
+        
 
         if (isTouchingWall || isTouchingDown)
         {
@@ -1619,11 +1704,11 @@ public class GruzMother : MonoBehaviour
     {
         float playerDirection = player.position.x - transform.position.x;
 
-        if (playerDirection > 0 && facingLeft)
+        if (playerDirection>0 && facingLeft)
         {
             Flip();
         }
-        else if (playerDirection < 0 && !facingLeft)
+        else if (playerDirection<0 && !facingLeft)
         {
             Flip();
         }
@@ -1642,6 +1727,18 @@ public class GruzMother : MonoBehaviour
         idelMovementDirection.x *= -1;
         attackMovementDirection.x *= -1;
         transform.Rotate(0, 180, 0);
+    }
+
+    private void OnCollisionEnter2D(Collision2D collision)
+    {
+        if (collision.gameObject.CompareTag("Player"))
+        {
+            PlayerDamage playerDamage = collision.gameObject.GetComponent<PlayerDamage>();
+            if (playerDamage != null)
+            {
+                playerDamage.TakeDamage(damageAmount);
+            }
+        }
     }
 
     private void OnDrawGizmosSelected()
@@ -1752,10 +1849,11 @@ using UnityEngine;
 
 public class FireBullet : MonoBehaviour
 {
+
     private float speed = 10f;
     private Animator anim;
     private bool canMove;
-
+    public int bulletDamage = 10;
     void Awake()
     {
         anim = GetComponent<Animator>();
@@ -1784,8 +1882,14 @@ public class FireBullet : MonoBehaviour
 
     public float Speed
     {
-        get { return speed; }
-        set { speed = value; }
+        get
+        {
+            return speed;
+        }
+        set
+        {
+            speed = value;
+        }
     }
 
     IEnumerator DisableBullet(float timer)
@@ -1794,33 +1898,31 @@ public class FireBullet : MonoBehaviour
         gameObject.SetActive(false);
     }
 
+
     void OnTriggerEnter2D(Collider2D target)
     {
         if (target.gameObject.tag == MyTags.BEETLE_TAG || target.gameObject.tag == MyTags.SNAIL_TAG
-            || target.gameObject.tag == MyTags.SPIDER_TAG || target.gameObject.tag == MyTags.BOSS_TAG
-            || target.gameObject.tag == "GruzMother")
+            || target.gameObject.tag == MyTags.SPIDER_TAG || target.gameObject.tag == "GruzMother" || target.gameObject.tag == MyTags.BOSS_TAG)
         {
             anim.Play("Explode");
             canMove = false;
 
-            // Deal damage to the boss, GruzMother, or Turret
-            if (target.gameObject.tag == MyTags.BOSS_TAG)
+            if (target.gameObject.tag == "GruzMother")
+            {
+                GruzMother gruzMother = target.GetComponent<GruzMother>();
+                if (gruzMother != null)
+                {
+                    gruzMother.TakeDamage(bulletDamage);
+                }
+            }
+            else if (target.gameObject.tag == MyTags.BOSS_TAG)
             {
                 BossHealth bossHealth = target.GetComponent<BossHealth>();
                 if (bossHealth != null)
                 {
-                    bossHealth.TakeDamage(10); // Adjust damage as needed
+                    bossHealth.TakeDamage(bulletDamage);
                 }
             }
-            else if (target.gameObject.tag == "GruzMother")
-            {
-                GruzMotherHealth gruzMotherHealth = target.GetComponent<GruzMotherHealth>();
-                if (gruzMotherHealth != null)
-                {
-                    gruzMotherHealth.TakeDamage(10); // Adjust damage as needed
-                }
-            }
-         
 
             StartCoroutine(DisableBullet(0.1f));
         }
@@ -1961,7 +2063,8 @@ public class PlayerDamage : MonoBehaviour
         {
             currentHealth -= damage;
             UpdateLifeText();
-            UpdateHealthText(); // Update health text when damage is taken
+            UpdateHealthText();
+
             if (currentHealth > 0)
             {
                 RepelPlayer();
@@ -1971,8 +2074,21 @@ public class PlayerDamage : MonoBehaviour
             {
                 Die();
             }
+
             canDamage = false;
             StartCoroutine(WaitForDamage());
+        }
+    }
+
+    private void OnCollisionEnter2D(Collision2D collision)
+    {
+        if (collision.gameObject.CompareTag("GruzMother"))
+        {
+            GruzMother gruzMother = collision.gameObject.GetComponent<GruzMother>();
+            if (gruzMother != null)
+            {
+                TakeDamage(gruzMother.damageAmount);
+            }
         }
     }
 
@@ -2215,7 +2331,7 @@ public class Player_Level_transition : MonoBehaviour
         {
             if (GameManager.Instance != null)
             {
-                if (SceneManager.GetActiveScene().name == "FinalLevel") // Adjust this to your final level's name
+                if (SceneManager.GetActiveScene().name == "Level 3") // Adjust this to your final level's name
                 {
                     GameManager.Instance.WinGame();
                 }
@@ -2262,81 +2378,44 @@ public class PlayerRespawn : MonoBehaviour
 
 
 // File: D:\Work\School\LaSalle\Unity\It is me, Mario\Assets\Scripts\Player Scripts\ScoreScript.cs
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class ScoreScript : MonoBehaviour {
+public class ScoreScript : MonoBehaviour
+{
+    private Text coinTextScore;
+    private AudioSource audioManager;
+    private int scoreCount;
 
-	private Text coinTextScore;
-	private AudioSource audioManager;
-	private int scoreCount;
+    void Awake()
+    {
+        audioManager = GetComponent<AudioSource>();
+    }
 
-	void Awake() {
-		audioManager = GetComponent<AudioSource> ();
-	}
+    void Start()
+    {
+        coinTextScore = GameObject.Find("CoinText").GetComponent<Text>();
+        scoreCount = PlayerPrefs.GetInt("Score", 0);
+        UpdateScoreText();
+    }
 
-	void Start () {
-		coinTextScore = GameObject.Find ("CoinText").GetComponent<Text> ();
-	}
+    void OnTriggerEnter2D(Collider2D target)
+    {
+        if (target.tag == MyTags.COIN_TAG)
+        {
+            target.gameObject.SetActive(false);
+            scoreCount++;
+            UpdateScoreText();
+            PlayerPrefs.SetInt("Score", scoreCount);
+            PlayerPrefs.Save();
+            audioManager.Play();
+        }
+    }
 
-	void OnTriggerEnter2D(Collider2D target) {
-		if (target.tag == MyTags.COIN_TAG) {
-			
-			target.gameObject.SetActive (false);
-			scoreCount++;
-
-			coinTextScore.text = "x" + scoreCount;
-
-			audioManager.Play ();
-		}
-	}
-
-} // class
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    void UpdateScoreText()
+    {
+        coinTextScore.text = "x" + scoreCount;
+    }
+}
 
 
