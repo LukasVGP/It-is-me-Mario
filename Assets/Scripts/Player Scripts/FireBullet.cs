@@ -8,7 +8,7 @@ public class FireBullet : MonoBehaviour
     private float speed = 10f;
     private Animator anim;
     private bool canMove;
-
+    public int bulletDamage = 10;
     void Awake()
     {
         anim = GetComponent<Animator>();
@@ -67,20 +67,19 @@ public class FireBullet : MonoBehaviour
                 GruzMother gruzMother = target.GetComponent<GruzMother>();
                 if (gruzMother != null)
                 {
-                    gruzMother.TakeDamage(10); // Adjust the damage value as needed
-                }
-                else if (target.gameObject.tag == MyTags.BOSS_TAG)
-                {
-                    // Deal damage to the boss
-                    BossHealth bossHealth = target.GetComponent<BossHealth>();
-                    if (bossHealth != null)
-                    {
-                        bossHealth.TakeDamage(10); // Adjust the damage value as needed
-                    }
-
-                    StartCoroutine(DisableBullet(0.1f));
+                    gruzMother.TakeDamage(bulletDamage);
                 }
             }
+            else if (target.gameObject.tag == MyTags.BOSS_TAG)
+            {
+                BossHealth bossHealth = target.GetComponent<BossHealth>();
+                if (bossHealth != null)
+                {
+                    bossHealth.TakeDamage(bulletDamage);
+                }
+            }
+
+            StartCoroutine(DisableBullet(0.1f));
         }
     }
 }

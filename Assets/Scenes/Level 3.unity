@@ -38080,7 +38080,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 36db0290c87be4a4bbd142b321e08011, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  player: {fileID: 0}
+  player: {fileID: 434687475}
   isFlipped: 0
   chaseSpeed: 3
   chaseDistance: 7
