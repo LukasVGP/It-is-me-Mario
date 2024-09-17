@@ -1,23 +1,41 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-public class LevelTransition : MonoBehaviour
+public class Player_Level_transition : MonoBehaviour
 {
-    public string nextLevel; // Name of the next level scene
+    public string nextLevelName; // Set this in the Inspector to the name of the next scene
 
-    void Update()
+    private void OnTriggerEnter2D(Collider2D other)
     {
-        if (Input.GetKeyDown(KeyCode.E))
+        if (other.CompareTag("LevelEnd"))
         {
-            // Check if the player is near the door
-            Collider2D playerCollider = Physics2D.OverlapCircle(transform.position, 1f, LayerMask.GetMask("Player"));
-            if (playerCollider != null)
+            if (GameManager.Instance != null)
             {
-                // Load the next level
-                SceneManager.LoadScene(nextLevel);
+                if (SceneManager.GetActiveScene().name == "FinalLevel") // Adjust this to your final level's name
+                {
+                    GameManager.Instance.WinGame();
+                }
+                else
+                {
+                    LoadNextLevel();
+                }
             }
+            else
+            {
+                Debug.LogError("GameManager instance not found!");
+            }
+        }
+    }
+
+    private void LoadNextLevel()
+    {
+        if (!string.IsNullOrEmpty(nextLevelName))
+        {
+            SceneManager.LoadScene(nextLevelName);
+        }
+        else
+        {
+            Debug.LogWarning("Next level name not set!");
         }
     }
 }

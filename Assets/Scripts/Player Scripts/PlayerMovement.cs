@@ -1,31 +1,32 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 
 public class PlayerMovement : MonoBehaviour
 {
     public float speed = 5f;
-    public Transform groundCheckPosition; // Ensure this is assigned in the inspector
+    public float jumpPower = 12f;
     public LayerMask groundLayer;
+    public float groundCheckRadius = 0.2f;
 
     private Rigidbody2D myBody;
     private Animator anim;
-    private bool isGrounded;
-    private bool jumped;
-    private float jumpPower = 12f;
-    private float jumpCooldown = 0.9f; // Cooldown period for jump
-    private float lastJumpTime; // Time when the player last jumped
+    private bool isGrounded = false;
+    private Transform groundCheck;
 
     void Awake()
     {
         myBody = GetComponent<Rigidbody2D>();
         anim = GetComponent<Animator>();
+
+        // Create and position the ground check object
+        groundCheck = new GameObject("GroundCheck").transform;
+        groundCheck.SetParent(transform);
+        groundCheck.localPosition = new Vector3(0, -0.5f, 0); // Adjust this value based on your character's size
     }
 
     void Update()
     {
-        CheckIfGrounded();
-        PlayerJump();
+        CheckGrounded();
+        HandleJump();
     }
 
     void FixedUpdate()
@@ -36,7 +37,6 @@ public class PlayerMovement : MonoBehaviour
     void PlayerWalk()
     {
         float h = Input.GetAxisRaw("Horizontal");
-
         if (h > 0)
         {
             myBody.velocity = new Vector2(speed, myBody.velocity.y);
@@ -62,31 +62,32 @@ public class PlayerMovement : MonoBehaviour
         transform.localScale = tempScale;
     }
 
-    void CheckIfGrounded()
+    void HandleJump()
     {
-        isGrounded = Physics2D.OverlapCircle(groundCheckPosition.position, 0.1f, groundLayer);
-
-        if (isGrounded)
+        if (Input.GetButtonDown("Jump") && isGrounded)
         {
-            if (jumped)
-            {
-                jumped = false;
-                anim.SetBool("Jump", false);
-            }
+            myBody.velocity = new Vector2(myBody.velocity.x, jumpPower);
+            anim.SetBool("Jump", true);
+            isGrounded = false;
         }
     }
 
-    void PlayerJump()
+    void CheckGrounded()
     {
-        if (isGrounded && !jumped && Time.time >= lastJumpTime + jumpCooldown)
+        isGrounded = Physics2D.OverlapCircle(groundCheck.position, groundCheckRadius, groundLayer);
+
+        if (isGrounded)
         {
-            if (Input.GetKey(KeyCode.Space))
-            {
-                jumped = true;
-                myBody.velocity = new Vector2(myBody.velocity.x, jumpPower);
-                anim.SetBool("Jump", true);
-                lastJumpTime = Time.time;
-            }
+            anim.SetBool("Jump", false);
+        }
+    }
+
+    void OnDrawGizmosSelected()
+    {
+        if (groundCheck != null)
+        {
+            Gizmos.color = Color.red;
+            Gizmos.DrawWireSphere(groundCheck.position, groundCheckRadius);
         }
     }
 }

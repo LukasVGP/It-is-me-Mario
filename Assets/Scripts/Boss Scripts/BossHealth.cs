@@ -2,73 +2,59 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class BossHealth : MonoBehaviour {
+public class BossHealth : MonoBehaviour
+{
+    public int health = 500;
+    public GameObject deathEffect;
+    public bool isInvulnerable = false;
 
-	private Animator anim;
-	private int health = 1;
+    private Animator anim;
 
-	private bool canDamage;
+    void Start()
+    {
+        anim = GetComponent<Animator>();
+    }
 
-	void Awake () {
-		anim = GetComponent<Animator> ();
-		canDamage = true;
-	}
+    public void TakeDamage(int damage)
+    {
+        if (isInvulnerable)
+            return;
 
-	IEnumerator WaitForDamage() {
-		yield return new WaitForSeconds (2f);
-		canDamage = true;
-	}
-	
-	void OnTriggerEnter2D(Collider2D target) {
-		if (canDamage) {
-			if (target.tag == MyTags.BULLET_TAG) {
-				health--;
-				canDamage = false;
+        health -= damage;
 
-				if (health == 0) {
-					//
-					GetComponent<BossScript>().DeactivateBossScript();
-					anim.Play("BossDead");
-				}
+        if (health <= 200)
+        {
+            EnterEnragedState();
+        }
 
-				StartCoroutine (WaitForDamage ());
-			}
-		}
-	}
+        if (health <= 0)
+        {
+            Die();
+        }
+    }
 
-} // class
+    private void EnterEnragedState()
+    {
+        anim.SetBool("IsEnraged", true);
 
+    }
 
+    void Die()
+    {
+        Instantiate(deathEffect, transform.position, Quaternion.identity);
+        Destroy(gameObject);
+    }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    void OnTriggerEnter2D(Collider2D other)
+    {
+        if (other.CompareTag(MyTags.BULLET_TAG))
+        {
+            FireBullet bullet = other.GetComponent<FireBullet>();
+            if (bullet != null)
+            {
+                TakeDamage(10); // Adjust this value as needed
+                bullet.gameObject.SetActive(false);
+            }
+        }
+    }
+}

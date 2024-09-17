@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class KillZone : MonoBehaviour
@@ -8,7 +6,15 @@ public class KillZone : MonoBehaviour
     {
         if (other.CompareTag("Player"))
         {
-            other.GetComponent<PlayerRespawn>().Respawn();
+            PlayerDamage playerDamage = other.GetComponent<PlayerDamage>();
+            if (playerDamage != null)
+            {
+                playerDamage.KillZoneDeath();
+            }
+            else
+            {
+                Debug.LogError("PlayerDamage component not found on the player.");
+            }
         }
     }
 }
