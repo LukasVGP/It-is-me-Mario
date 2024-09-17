@@ -16,6 +16,7 @@ TagManager:
   - Enemy
   - Hazard
   - GruzMother
+  - LevelEnd
   layers:
   - Default
   - TransparentFX

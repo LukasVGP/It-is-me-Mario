@@ -11,7 +11,7 @@ public class Player_Level_transition : MonoBehaviour
         {
             if (GameManager.Instance != null)
             {
-                if (SceneManager.GetActiveScene().name == "FinalLevel") // Adjust this to your final level's name
+                if (SceneManager.GetActiveScene().name == "Level 3") // Adjust this to your final level's name
                 {
                     GameManager.Instance.WinGame();
                 }
